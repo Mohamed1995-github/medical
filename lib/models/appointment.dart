@@ -1,13 +1,69 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/appointment.dart';
 import '../models/doctor.dart';
 import '../models/clinic.dart';
 import '../utils/error_handler.dart';
 
+class AppointmentException implements Exception {
+  final String message;
+  AppointmentException(this.message);
+}
+
+enum AppointmentStatus { pending, confirmed, cancelled, completed }
+
+class Appointment {
+  final String id;
+  final String patientId;
+  final String doctorId;
+  final String clinicId;
+  final DateTime scheduledTime;
+  final String notes;
+  final AppointmentStatus status;
+
+  Appointment({
+    required this.id,
+    required this.patientId,
+    required this.doctorId,
+    required this.clinicId,
+    required this.scheduledTime,
+    required this.notes,
+    required this.status,
+  });
+
+  factory Appointment.fromJson(Map<String, dynamic> json) {
+    return Appointment(
+      id: json['id'],
+      patientId: json['patientId'],
+      doctorId: json['doctorId'],
+      clinicId: json['clinicId'],
+      scheduledTime: DateTime.parse(json['scheduledTime']),
+      notes: json['notes'],
+      status: AppointmentStatus.values.firstWhere(
+        (e) => e.toString().split('.').last == json['status'],
+      ),
+    );
+  }
+}
+
 class AppointmentService {
-  static const String _baseUrl = 'https://your-backend-api.com/api/appointments';
+  // Validate appointment details
+  bool _validateAppointment(
+      Doctor doctor, Clinic clinic, DateTime scheduledTime) {
+    if (doctor.id.isEmpty || clinic.id.isEmpty) {
+      return false;
+    }
+
+    // Check if scheduled time is in the future
+    if (scheduledTime.isBefore(DateTime.now())) {
+      return false;
+    }
+
+    return true;
+  }
+
+  static const String _baseUrl =
+      'https://your-backend-api.com/api/appointments';
 
   // Create a new appointment
   Future<Appointment> createAppointment({
@@ -50,7 +106,8 @@ class AppointmentService {
       }
     } catch (e) {
       ErrorHandler.handleError(e);
-      throw AppointmentException('Unable to create appointment. Please try again.');
+      throw AppointmentException(
+          'Unable to create appointment. Please try again.');
     }
   }
 
@@ -78,6 +135,8 @@ class AppointmentService {
       }
     } catch (e) {
       ErrorHandler.handleError(e);
-      throw AppointmentException('Unable to fetch appointments. Please try again.');
+      throw AppointmentException(
+          'Unable to fetch appointments. Please try again.');
     }
   }
+}
