@@ -2,7 +2,23 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'clinic.g.dart';
 
-@JsonSerializable()
+// Enum for clinic specialties
+enum ClinicSpecialty {
+  @JsonValue('general')
+  general,
+  @JsonValue('pediatric')
+  pediatric,
+  @JsonValue('cardiology')
+  cardiology,
+  @JsonValue('orthopedic')
+  orthopedic,
+  @JsonValue('dermatology')
+  dermatology,
+  @JsonValue('neurology')
+  neurology,
+}
+
+@JsonSerializable(explicitToJson: true)
 class Clinic {
   @JsonKey(required: true)
   final String id;
@@ -23,10 +39,28 @@ class Clinic {
   final bool isVerified;
 
   @JsonKey(defaultValue: [])
-  final List<String> specialties;
+  final List<ClinicSpecialty> specialties;
 
   @JsonKey(defaultValue: {})
   final Map<String, dynamic> operatingHours;
+
+  @JsonKey(defaultValue: 0.0)
+  final double latitude;
+
+  @JsonKey(defaultValue: 0.0)
+  final double longitude;
+
+  @JsonKey(defaultValue: '')
+  final String websiteUrl;
+
+  @JsonKey(defaultValue: [])
+  final List<String> availableServices;
+
+  @JsonKey(defaultValue: false)
+  final bool acceptsEmergencies;
+
+  @JsonKey(defaultValue: 0)
+  final int totalDoctors;
 
   Clinic({
     required this.id,
@@ -37,6 +71,12 @@ class Clinic {
     this.isVerified = false,
     this.specialties = const [],
     this.operatingHours = const {},
+    this.latitude = 0.0,
+    this.longitude = 0.0,
+    this.websiteUrl = '',
+    this.availableServices = const [],
+    this.acceptsEmergencies = false,
+    this.totalDoctors = 0,
   });
 
   // Validation methods
@@ -46,10 +86,10 @@ class Clinic {
 
   // Check if clinic is open at a specific time
   bool isOpenAt(DateTime dateTime) {
-    final day = dateTime.weekday;
+    final day = _getDayName(dateTime.weekday);
     final time = dateTime.hour * 60 + dateTime.minute;
 
-    final dayHours = operatingHours[_getDayName(day)];
+    final dayHours = operatingHours[day];
     if (dayHours == null) return false;
 
     final openTime = _timeToMinutes(dayHours['open']);
@@ -90,8 +130,14 @@ class Clinic {
     String? phoneNumber,
     String? emailAddress,
     bool? isVerified,
-    List<String>? specialties,
+    List<ClinicSpecialty>? specialties,
     Map<String, dynamic>? operatingHours,
+    double? latitude,
+    double? longitude,
+    String? websiteUrl,
+    List<String>? availableServices,
+    bool? acceptsEmergencies,
+    int? totalDoctors,
   }) {
     return Clinic(
       id: id ?? this.id,
@@ -102,6 +148,12 @@ class Clinic {
       isVerified: isVerified ?? this.isVerified,
       specialties: specialties ?? this.specialties,
       operatingHours: operatingHours ?? this.operatingHours,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      websiteUrl: websiteUrl ?? this.websiteUrl,
+      availableServices: availableServices ?? this.availableServices,
+      acceptsEmergencies: acceptsEmergencies ?? this.acceptsEmergencies,
+      totalDoctors: totalDoctors ?? this.totalDoctors,
     );
   }
 
