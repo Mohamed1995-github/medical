@@ -1,209 +1,199 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/appointment.dart';
+import '../config/theme.dart';
 
 class AppointmentCard extends StatelessWidget {
   final Appointment appointment;
-  final VoidCallback onTap;
+  final String clinicName;
+  final VoidCallback? onTap;
+  final VoidCallback? onPayment;
+  final VoidCallback? onCancel;
 
   const AppointmentCard({
-    super.key,
+    Key? key,
     required this.appointment,
-    required this.onTap,
-  });
-
-  String _getStatusText(AppointmentStatus status) {
-    switch (status) {
-      case AppointmentStatus.pending:
-        return 'Pending';
-      case AppointmentStatus.confirmed:
-        return 'Confirmed';
-      case AppointmentStatus.cancelled:
-        return 'Cancelled';
-      case AppointmentStatus.completed:
-        return 'Completed';
-    }
-  }
-
-  Color _getStatusColor(AppointmentStatus status) {
-    switch (status) {
-      case AppointmentStatus.pending:
-        return Colors.orange;
-      case AppointmentStatus.confirmed:
-        return Colors.green;
-      case AppointmentStatus.cancelled:
-        return Colors.red;
-      case AppointmentStatus.completed:
-        return Colors.blue;
-    }
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final day = dateTime.day.toString().padLeft(2, '0');
-    final month = dateTime.month.toString().padLeft(2, '0');
-    final year = dateTime.year;
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-
-    return '$day/$month/$year at $hour:$minute';
-  }
+    required this.clinicName,
+    this.onTap,
+    this.onPayment,
+    this.onCancel,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title and Status Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // In a real app, we would fetch doctor and clinic names
-                  const Text(
-                    'Medical Appointment',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                  Text(
+                    clinicName,
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          _getStatusColor(appointment.status).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _getStatusColor(appointment.status),
-                      ),
-                    ),
-                    child: Text(
-                      _getStatusText(appointment.status),
-                      style: TextStyle(
-                        color: _getStatusColor(appointment.status),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  _buildStatusChip(context),
                 ],
               ),
               const SizedBox(height: 12),
-
-              // Date Time Row
               Row(
                 children: [
-                  const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                  const Icon(Icons.calendar_today,
+                      size: 16, color: lightTextColor),
                   const SizedBox(width: 8),
                   Text(
-                    _formatDateTime(appointment.scheduledTime),
-                    style: const TextStyle(color: Colors.grey),
+                    DateFormat('dd MMMM yyyy').format(appointment.date),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(width: 16),
+                  const Icon(Icons.access_time,
+                      size: 16, color: lightTextColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    appointment.time,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-
-              // ID Row
               Row(
                 children: [
-                  const Icon(Icons.tag, size: 16, color: Colors.grey),
+                  const Icon(Icons.medical_services_outlined,
+                      size: 16, color: lightTextColor),
                   const SizedBox(width: 8),
                   Text(
-                    'ID: ${appointment.id}',
-                    style: const TextStyle(color: Colors.grey),
+                    appointment.service,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
               ),
-
-              // Notes - if any
-              if (appointment.notes.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 4),
-                Text(
-                  'Notes: ${appointment.notes}',
-                  style: const TextStyle(
-                    fontStyle: FontStyle.italic,
-                    fontSize: 14,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-
-              // Action Buttons
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  // Show different buttons based on status
-                  if (appointment.status == AppointmentStatus.pending ||
-                      appointment.status == AppointmentStatus.confirmed) ...[
-                    TextButton.icon(
-                      onPressed: () {
-                        // This would be implemented in a real app
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Reschedule coming soon!')),
-                        );
-                      },
-                      icon: const Icon(Icons.calendar_today, size: 16),
-                      label: const Text('Reschedule'),
-                    ),
-                    const SizedBox(width: 8),
-                    TextButton.icon(
-                      onPressed: () {
-                        // This would be implemented in a real app
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Cancel coming soon!')),
-                        );
-                      },
-                      icon: const Icon(Icons.cancel_outlined,
-                          size: 16, color: Colors.red),
-                      label: const Text('Cancel',
-                          style: TextStyle(color: Colors.red)),
-                    ),
-                  ],
-
-                  if (appointment.status == AppointmentStatus.completed) ...[
-                    TextButton.icon(
-                      onPressed: () {
-                        // This would be implemented in a real app
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Review coming soon!')),
-                        );
-                      },
-                      icon: const Icon(Icons.rate_review_outlined, size: 16),
-                      label: const Text('Review'),
-                    ),
-                  ],
-
-                  if (appointment.status == AppointmentStatus.cancelled) ...[
-                    TextButton.icon(
-                      onPressed: () {
-                        // This would be implemented in a real app
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Rebook coming soon!')),
-                        );
-                      },
-                      icon: const Icon(Icons.refresh, size: 16),
-                      label: const Text('Rebook'),
-                    ),
-                  ],
+                  const Icon(Icons.payment, size: 16, color: lightTextColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    appointment.isPaid ? 'Payé' : 'Non payé',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: appointment.isPaid ? successColor : errorColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${appointment.amount.toStringAsFixed(2)} €',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ],
               ),
+              if (_showActions())
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: _buildActionButtons(context),
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildStatusChip(BuildContext context) {
+    Color chipColor;
+    String statusText;
+
+    switch (appointment.status) {
+      case AppointmentStatus.pending:
+        chipColor = Colors.orange;
+        statusText = 'En attente';
+        break;
+      case AppointmentStatus.confirmed:
+        chipColor = Colors.blue;
+        statusText = 'Confirmé';
+        break;
+      case AppointmentStatus.completed:
+        chipColor = successColor;
+        statusText = 'Terminé';
+        break;
+      case AppointmentStatus.cancelled:
+        chipColor = errorColor;
+        statusText = 'Annulé';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: chipColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: chipColor, width: 1),
+      ),
+      child: Text(
+        statusText,
+        style: TextStyle(
+          color: chipColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  bool _showActions() {
+    return appointment.status == AppointmentStatus.pending ||
+        appointment.status == AppointmentStatus.confirmed ||
+        (!appointment.isPaid &&
+            appointment.status != AppointmentStatus.cancelled);
+  }
+
+  List<Widget> _buildActionButtons(BuildContext context) {
+    final List<Widget> buttons = [];
+
+    // Bouton de paiement
+    if (!appointment.isPaid &&
+        appointment.status != AppointmentStatus.cancelled &&
+        onPayment != null) {
+      buttons.add(
+        TextButton.icon(
+          onPressed: onPayment,
+          icon: const Icon(Icons.payment, size: 16),
+          label: const Text('Payer'),
+          style: TextButton.styleFrom(
+            foregroundColor: primaryColor,
+          ),
+        ),
+      );
+    }
+
+    // Bouton d'annulation
+    if ((appointment.status == AppointmentStatus.pending ||
+            appointment.status == AppointmentStatus.confirmed) &&
+        onCancel != null) {
+      buttons.add(
+        TextButton.icon(
+          onPressed: onCancel,
+          icon: const Icon(Icons.cancel_outlined, size: 16),
+          label: const Text('Annuler'),
+          style: TextButton.styleFrom(
+            foregroundColor: errorColor,
+          ),
+        ),
+      );
+    }
+
+    return buttons;
   }
 }

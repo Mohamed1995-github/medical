@@ -1,22 +1,52 @@
 class User {
   final String id;
-  final String name;
+  final String username;
   final String phoneNumber;
-  final String cniNumber;
+  final String cni;
+  final String? profileImage;
 
   User({
     required this.id,
-    required this.name,
+    required this.username,
     required this.phoneNumber,
-    required this.cniNumber,
+    required this.cni,
+    this.profileImage,
   });
 
+  // Conversion depuis et vers JSON pour utilisation avec API
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      phoneNumber: json['phoneNumber'] as String,
-      cniNumber: json['cniNumber'] as String,
+      id: json['id'],
+      username: json['username'],
+      phoneNumber: json['phoneNumber'],
+      cni: json['cni'],
+      profileImage: json['profileImage'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'phoneNumber': phoneNumber,
+      'cni': cni,
+      'profileImage': profileImage,
+    };
+  }
+
+  // Copie avec modification
+  User copyWith({
+    String? username,
+    String? phoneNumber,
+    String? cni,
+    String? profileImage,
+  }) {
+    return User(
+      id: this.id,
+      username: username ?? this.username,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      cni: cni ?? this.cni,
+      profileImage: profileImage ?? this.profileImage,
     );
   }
 }
