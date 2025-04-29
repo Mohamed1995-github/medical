@@ -1,13 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../models/doctor.dart';
-import '../models/clinic.dart';
 import '../utils/error_handler.dart';
 
 class AppointmentException implements Exception {
   final String message;
   AppointmentException(this.message);
+
+  @override
+  String toString() => message;
 }
 
 enum AppointmentStatus { pending, confirmed, cancelled, completed }
@@ -30,113 +29,110 @@ class Appointment {
     required this.notes,
     required this.status,
   });
-
-  factory Appointment.fromJson(Map<String, dynamic> json) {
-    return Appointment(
-      id: json['id'],
-      patientId: json['patientId'],
-      doctorId: json['doctorId'],
-      clinicId: json['clinicId'],
-      scheduledTime: DateTime.parse(json['scheduledTime']),
-      notes: json['notes'],
-      status: AppointmentStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == json['status'],
-      ),
-    );
-  }
 }
 
 class AppointmentService {
-  // Validate appointment details
-  bool _validateAppointment(
-      Doctor doctor, Clinic clinic, DateTime scheduledTime) {
-    if (doctor.id.isEmpty || clinic.id.isEmpty) {
-      return false;
-    }
+  // Mock appointments data
+  List<Appointment> _mockAppointments(String patientId) {
+    final now = DateTime.now();
 
-    // Check if scheduled time is in the future
-    if (scheduledTime.isBefore(DateTime.now())) {
-      return false;
-    }
-
-    return true;
-  }
-
-  static const String _baseUrl =
-      'https://your-backend-api.com/api/appointments';
-
-  // Create a new appointment
-  Future<Appointment> createAppointment({
-    required String patientId,
-    required Doctor doctor,
-    required Clinic clinic,
-    required DateTime scheduledTime,
-    String? notes,
-  }) async {
-    try {
-      // Validate appointment before sending
-      if (!_validateAppointment(doctor, clinic, scheduledTime)) {
-        throw AppointmentException('Invalid appointment details');
-      }
-
-      final response = await http.post(
-        Uri.parse(_baseUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $token', // Add authentication token
-        },
-        body: jsonEncode({
-          'patientId': patientId,
-          'doctorId': doctor.id,
-          'clinicId': clinic.id,
-          'scheduledTime': scheduledTime.toIso8601String(),
-          'notes': notes ?? '',
-          'status': AppointmentStatus.pending.toString().split('.').last,
-        }),
-      );
-
-      if (response.statusCode == 201) {
-        final Map<String, dynamic> appointmentData = jsonDecode(response.body);
-        return Appointment.fromJson(appointmentData);
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw AppointmentException(
-          errorData['message'] ?? 'Failed to create appointment',
-        );
-      }
-    } catch (e) {
-      ErrorHandler.handleError(e);
-      throw AppointmentException(
-          'Unable to create appointment. Please try again.');
-    }
+    return [
+      Appointment(
+        id: '1',
+        patientId: patientId,
+        doctorId: 'dr1',
+        clinicId: 'clinic1',
+        scheduledTime: now.add(const Duration(days: 2, hours: 3)),
+        notes: 'Regular checkup',
+        status: AppointmentStatus.confirmed,
+      ),
+      Appointment(
+        id: '2',
+        patientId: patientId,
+        doctorId: 'dr2',
+        clinicId: 'clinic2',
+        scheduledTime: now.subtract(const Duration(days: 5)),
+        notes: 'Flu symptoms',
+        status: AppointmentStatus.completed,
+      ),
+      Appointment(
+        id: '3',
+        patientId: patientId,
+        doctorId: 'dr3',
+        clinicId: 'clinic1',
+        scheduledTime: now.add(const Duration(days: 7)),
+        notes: 'Follow-up appointment',
+        status: AppointmentStatus.pending,
+      ),
+      Appointment(
+        id: '4',
+        patientId: patientId,
+        doctorId: 'dr2',
+        clinicId: 'clinic2',
+        scheduledTime: now.subtract(const Duration(days: 10)),
+        notes: 'Cancelled due to emergency',
+        status: AppointmentStatus.cancelled,
+      ),
+    ];
   }
 
   // Get appointments for a specific patient
   Future<List<Appointment>> getPatientAppointments(String patientId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/patient/$patientId'),
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $token', // Add authentication token
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> appointmentsData = jsonDecode(response.body);
-        return appointmentsData
-            .map((appointmentJson) => Appointment.fromJson(appointmentJson))
-            .toList();
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw AppointmentException(
-          errorData['message'] ?? 'Failed to fetch appointments',
-        );
-      }
+      // Simulate network delay
+      await Future.delayed(const Duration(milliseconds: 500));
+      return _mockAppointments(patientId);
     } catch (e) {
+      // No HTTP request to handle errors from, but keep for consistency
       ErrorHandler.handleError(e);
       throw AppointmentException(
           'Unable to fetch appointments. Please try again.');
+    }
+  }
+
+  // Validate appointment details (simplified)
+  bool _validateAppointment(
+      String doctorId, String clinicId, DateTime scheduledTime) {
+    if (doctorId.isEmpty || clinicId.isEmpty) {
+      return false;
+    }
+    if (scheduledTime.isBefore(DateTime.now())) {
+      return false;
+    }
+    return true;
+  }
+
+  // Create a new appointment (simplified)
+  Future<Appointment> createAppointment({
+    required String patientId,
+    required String doctorId,
+    required String clinicId,
+    required DateTime scheduledTime,
+    String? notes,
+  }) async {
+    try {
+      // Validate appointment
+      if (!_validateAppointment(doctorId, clinicId, scheduledTime)) {
+        throw AppointmentException('Invalid appointment details');
+      }
+
+      // Simulate network delay
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Return a new appointment
+      return Appointment(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        patientId: patientId,
+        doctorId: doctorId,
+        clinicId: clinicId,
+        scheduledTime: scheduledTime,
+        notes: notes ?? '',
+        status: AppointmentStatus.pending,
+      );
+    } catch (e) {
+      ErrorHandler.handleError(e);
+      throw AppointmentException(
+          'Unable to create appointment. Please try again.');
     }
   }
 }
