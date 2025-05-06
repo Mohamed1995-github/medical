@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../screens/login_page.dart';
-import '../screens/register_page.dart';
+import '../screens/register_page_odoo.dart';
 import '../screens/clinic_list_page.dart' as clinic_list;
 // Make sure the path and class name match your project structure
 import '../screens/home_page.dart';
@@ -12,7 +12,7 @@ import '../screens/payment_page.dart';
 // Définition des routes de l'application
 final Map<String, WidgetBuilder> appRoutes = {
   '/login': (context) => LoginPage(),
-  '/register': (context) => RegisterPage(),
+  '/register': (context) => RegisterPageOdoo(),
   '/clinics': (context) => clinic_list.ClinicListPage(),
   '/home': (context) => HomePage(),
   '/profile': (context) => ProfilePage(),
