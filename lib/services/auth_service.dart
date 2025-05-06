@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 
 class AuthService with ChangeNotifier {
-  static const String _baseUrl = 'https://votre-api.com/api';
+  static const String _baseUrl = 'https://abc-hms-pro.odoo.com/odoo/api';
 
   User? _currentUser;
   String? _token;
