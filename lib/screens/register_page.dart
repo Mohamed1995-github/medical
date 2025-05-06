@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
 import '../config/routes.dart';
 import '../config/theme.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 
-class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+class RegisterPageWithAuth extends StatefulWidget {
+  const RegisterPageWithAuth({Key? key}) : super(key: key);
 
   @override
-  _RegisterPageState createState() => _RegisterPageState();
+  _RegisterPageWithAuthState createState() => _RegisterPageWithAuthState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageWithAuthState extends State<RegisterPageWithAuth> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _cniController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _isLoading = false;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -26,6 +29,7 @@ class _RegisterPageState extends State<RegisterPage> {
     _phoneController.dispose();
     _cniController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -35,28 +39,47 @@ class _RegisterPageState extends State<RegisterPage> {
     });
   }
 
-  void _register() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+  void _toggleConfirmPasswordVisibility() {
+    setState(() {
+      _obscureConfirmPassword = !_obscureConfirmPassword;
+    });
+  }
 
-      // Simuler une attente pour l'inscription
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Ici, vous implémenteriez l'appel à votre API pour l'inscription
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Naviguer vers la page d'accueil après inscription réussie
-      NavigationHelper.navigateToHome(context);
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
     }
+
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    final success = await authService.register(
+      username: _usernameController.text.trim(),
+      phoneNumber: _phoneController.text.trim(),
+      cni: _cniController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (success) {
+      NavigationHelper.navigateToHome(context);
+    } else {
+      // Afficher une erreur si l'inscription a échoué
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authService.error ?? 'Échec de l\'inscription'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _navigateToLogin() {
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Créer un compte')),
       body: SafeArea(
@@ -138,11 +161,27 @@ class _RegisterPageState extends State<RegisterPage> {
                       return null;
                     },
                   ),
+                  const SizedBox(height: 20),
+                  CustomTextField.password(
+                    controller: _confirmPasswordController,
+                    label: 'Confirmer le mot de passe',
+                    obscureText: _obscureConfirmPassword,
+                    toggleVisibility: _toggleConfirmPasswordVisibility,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Veuillez confirmer votre mot de passe';
+                      }
+                      if (value != _passwordController.text) {
+                        return 'Les mots de passe ne correspondent pas';
+                      }
+                      return null;
+                    },
+                  ),
                   const SizedBox(height: 32),
                   CustomButton(
                     text: 'S\'inscrire',
                     onPressed: _register,
-                    isLoading: _isLoading,
+                    isLoading: authService.isLoading,
                   ),
                   const SizedBox(height: 24),
                   _buildLoginOption(),
@@ -164,9 +203,7 @@ class _RegisterPageState extends State<RegisterPage> {
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: _navigateToLogin,
           child: const Text('Se connecter'),
         ),
       ],
