@@ -40,11 +40,7 @@ class OdooApiClient {
       final uri = Uri.parse('${Endpoints.baseUrl}$endpoint');
 
       // Construire le payload JSON-RPC
-      final payload = {
-        'jsonrpc': '2.0',
-        'method': 'call',
-        'params': params,
-      };
+      final payload = params;
 
       // Headers de base pour JSON-RPC
       final headers = {

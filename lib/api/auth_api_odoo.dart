@@ -125,6 +125,23 @@ class AuthApiOdoo {
     return response;
   }
 
+  Future<Map<String, dynamic>> resetPassword({
+    required String phoneNumber,
+    required String code,
+    required String newPassword,
+  }) async {
+    final params = {
+      'phone': phoneNumber,
+      'type': 'reset_password',
+      'code': code,
+      'new_password': newPassword,
+    };
+
+    final response =
+        await _apiClient.jsonRpcCall('/si7a/reset_password', params);
+    return response;
+  }
+
   /// Convertir la réponse d'API en modèle utilisateur
   User parseUserResponse(Map<String, dynamic> response) {
     // Adapter cette méthode selon la structure réelle de votre réponse API

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import '../api/odoo_api_client.dart';
 import '../config/routes.dart';
 import '../config/theme.dart';
+import '../models/user.dart';
+import '../services/auth_service.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 
@@ -17,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -31,24 +38,125 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
-  void _login() async {
+  String _formatPhoneNumber(String phoneNumber) {
+    // Supprimer les espaces et autres caractères non numériques
+    phoneNumber = phoneNumber.replaceAll(RegExp(r'\s+'), '');
+    phoneNumber = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+
+    // Retirer le préfixe "+" si présent
+    if (phoneNumber.startsWith('+')) {
+      phoneNumber = phoneNumber.substring(1);
+    }
+
+    // Retirer le préfixe "222" (Mauritanie) si présent
+    if (phoneNumber.startsWith('222')) {
+      phoneNumber = phoneNumber.substring(3);
+    }
+
+    return phoneNumber;
+  }
+
+  Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
+        _errorMessage = null;
       });
 
-      // Simuler une attente pour la connexion
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final phone = _formatPhoneNumber(_phoneController.text.trim());
+        final password = _passwordController.text;
 
-      // Ici, vous implémenteriez l'appel à votre API pour la connexion
+        // Appel direct à l'API Odoo en utilisant OdooApiClient
+        final client = Provider.of<OdooApiClient>(context, listen: false);
 
-      setState(() {
-        _isLoading = false;
-      });
+        // Construire les paramètres pour l'API login
+        final Map<String, dynamic> params = {
+          "partner_phone": phone,
+          "partner_password": password
+        };
 
-      // Naviguer vers la page d'accueil après connexion réussie
-      NavigationHelper.navigateToHome(context);
+        // Appel à l'API login
+        final response = await client.jsonRpcCall('/si7a/login', params);
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        // Traiter la réponse
+        if (response != null && response is Map<String, dynamic>) {
+          if (response.containsKey('success') && response['success'] == true) {
+            // Connexion réussie
+            print("Connexion réussie: $response");
+
+            // Extraire les données de l'utilisateur
+            final userData = {
+              'id': response['partner_id']?.toString() ?? '',
+              'username': response['partner_name'] ?? '',
+              'phoneNumber': phone,
+              'cni': response['nni'] ?? '',
+              'profileImage': response['partner_image'] ?? '',
+            };
+
+            // Créer l'objet utilisateur
+            final user = User.fromJson(userData);
+
+            // Accéder au service d'authentification
+            final authService =
+                Provider.of<AuthService>(context, listen: false);
+
+            // Sauvegarder les données de session
+            final prefs = await SharedPreferences.getInstance();
+
+            // Générer un token simple si aucun n'est fourni par l'API
+            final token = response['token'] ??
+                'default_token_${DateTime.now().millisecondsSinceEpoch}';
+            final expiryDate = DateTime.now().add(const Duration(days: 30));
+
+            // Enregistrer les données dans les préférences partagées
+            prefs.setString('auth_token', token);
+            prefs.setString('auth_expiry_date', expiryDate.toIso8601String());
+            prefs.setString('user_data', json.encode(userData));
+
+            // Mettre à jour manuellement l'état du service d'authentification
+            await authService.initializeService();
+
+            // Naviguer vers la page d'accueil
+            NavigationHelper.navigateToHome(context);
+          } else {
+            // Erreur de connexion
+            setState(() {
+              _errorMessage = response.containsKey('message')
+                  ? response['message']
+                  : 'Identifiants incorrects';
+            });
+          }
+        } else {
+          setState(() {
+            _errorMessage = 'Réponse invalide du serveur';
+          });
+        }
+      } catch (e) {
+        print("Exception lors de la connexion: $e");
+        setState(() {
+          _isLoading = false;
+          if (e is OdooApiException) {
+            _errorMessage = "Erreur: ${e.message}";
+          } else {
+            _errorMessage = 'Une erreur est survenue: ${e.toString()}';
+          }
+        });
+      }
     }
+  }
+
+  void _navigateToForgotPassword() {
+    // Afficher un message temporaire
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Fonction de récupération de mot de passe à venir'),
+      ),
+    );
   }
 
   @override
@@ -66,9 +174,27 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 40),
                   _buildHeader(),
                   const SizedBox(height: 40),
+
+                  // Afficher le message d'erreur s'il y en a un
+                  if (_errorMessage != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade300),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: TextStyle(color: Colors.red.shade800),
+                      ),
+                    ),
+
                   CustomTextField.phoneNumber(
                     controller: _phoneController,
                     label: 'Numéro de téléphone',
+                    hint: 'Entrez votre numéro de téléphone',
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Veuillez entrer votre numéro de téléphone';
@@ -83,14 +209,15 @@ class _LoginPageState extends State<LoginPage> {
                   CustomTextField.password(
                     controller: _passwordController,
                     label: 'Mot de passe',
+                    hint: 'Entrez votre mot de passe',
                     obscureText: _obscurePassword,
                     toggleVisibility: _togglePasswordVisibility,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Veuillez entrer votre mot de passe';
                       }
-                      if (value.length < 6) {
-                        return 'Le mot de passe doit contenir au moins 6 caractères';
+                      if (value.length < 3) {
+                        return 'Le mot de passe doit contenir au moins 3 caractères';
                       }
                       return null;
                     },
@@ -99,9 +226,7 @@ class _LoginPageState extends State<LoginPage> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        // Naviguer vers la page de réinitialisation du mot de passe
-                      },
+                      onPressed: _navigateToForgotPassword,
                       child: const Text('Mot de passe oublié ?'),
                     ),
                   ),

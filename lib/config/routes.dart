@@ -8,11 +8,23 @@ import '../screens/profile_page.dart';
 import '../screens/history_page.dart';
 import '../screens/create_appointment_page.dart';
 import '../screens/payment_page.dart';
+import '../screens/verify_sms_code_page.dart';
 
 // Définition des routes de l'application
 final Map<String, WidgetBuilder> appRoutes = {
   '/login': (context) => LoginPage(),
   '/register': (context) => RegisterPageOdoo(),
+  '/verify-sms-code': (context) {
+    // Assuming you have a VerifySmsCodePage that takes phoneNumber and userId as parameters
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    return VerifySmsCodePage(
+        phoneNumber: args['phoneNumber'], userId: args['userId']);
+  },
+  // You must provide actual values for phoneNumber and userId here or handle them dynamically
+  // Example with placeholder values:
+  // '/register': (context) => VerifySmsCodePage(phoneNumber: '1234567890', userId: 1),
+  // Or remove this route if you do not have default values
   '/clinics': (context) => clinic_list.ClinicListPage(),
   '/home': (context) => HomePage(),
   '/profile': (context) => ProfilePage(),
