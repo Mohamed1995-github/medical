@@ -1,12 +1,22 @@
+// lib/screens/create_appointment_page.dart
+
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../config/routes.dart';
-import '../config/theme.dart';
+import 'package:provider/provider.dart';
+
 import '../models/clinic.dart';
-import '../widgets/custom_button.dart';
+import '../models/specialty.dart';
+import '../models/physician.dart';
+import '../services/odoo_service.dart';
 
 class CreateAppointmentPage extends StatefulWidget {
-  const CreateAppointmentPage({Key? key}) : super(key: key);
+  final Clinic clinic;
+  final String govCode;
+
+  const CreateAppointmentPage({
+    Key? key,
+    required this.clinic,
+    required this.govCode,
+  }) : super(key: key);
 
   @override
   _CreateAppointmentPageState createState() => _CreateAppointmentPageState();
@@ -15,370 +25,193 @@ class CreateAppointmentPage extends StatefulWidget {
 class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
   final _formKey = GlobalKey<FormState>();
 
-  late Clinic _selectedClinic;
-  String? _selectedService;
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
-  String? _selectedTime;
-  bool _isLoading = true;
-  bool _isSubmitting = false;
+  late final OdooService _odoo;
+  late int _patientId;
+  bool _patientExists = false;
 
-  List<String> _availableTimes = [];
+  // Champs de création de patient
+  final _nameController = TextEditingController();
+  String? _selectedGender; // 'M' ou 'F'
+
+  List<Specialty> _specialties = [];
+  Specialty? _selectedSpecialty;
+
+  List<Physician> _physicians = [];
+  Physician? _selectedPhysician;
+
+  bool _isSubmitting = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadClinicData();
+    _odoo = context.read<OdooService>();
+    _patientId = int.tryParse(widget.govCode) ?? 0;
+    _checkPatientExists();
+    _loadSpecialties();
   }
 
-  Future<void> _loadClinicData() async {
-    // Simuler un chargement depuis l'API
-    await Future.delayed(const Duration(seconds: 1));
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
-    // Données fictives pour l'exemple
-    final mockClinic = Clinic(
-      id: '1',
-      name: 'Clinique Médicale St-Jean',
-      address: '15 Rue de la Santé, 75001 Paris',
-      phoneNumber: '+33 1 23 45 67 89',
-      imageUrl: 'https://example.com/clinic1.jpg',
-      rating: 4.5,
-      services: ['Consultation générale', 'Cardiologie', 'Pédiatrie'],
-      schedule: {
-        'lundi': '08:00-18:00',
-        'mardi': '08:00-18:00',
-        'mercredi': '08:00-18:00',
-        'jeudi': '08:00-18:00',
-        'vendredi': '08:00-17:00',
-        'samedi': '09:00-12:00',
-        'dimanche': 'Fermé',
-      },
-    );
+  Future<void> _checkPatientExists() async {
+    try {
+      final exists = await _odoo.checkPatientExists(widget.govCode);
+      setState(() {
+        _patientExists = exists;
+        if (exists) {
+          _patientId = int.parse(widget.govCode);
+        }
+      });
+    } catch (_) {
+      // Si l'appel échoue, on considérera qu'il n'existe pas
+      setState(() => _patientExists = false);
+    }
+  }
+
+  Future<void> _loadSpecialties() async {
+    try {
+      final specs = await _odoo.getSpecialties();
+      setState(() => _specialties = specs);
+    } catch (e) {
+      setState(() => _errorMessage = 'Erreur chargement spécialités');
+    }
+  }
+
+  void _onSpecialtyChanged(Specialty? spec) {
+    setState(() {
+      _selectedSpecialty = spec;
+      _physicians = [];
+      _selectedPhysician = null;
+    });
+    if (spec != null) {
+      _odoo
+          .getPhysiciansBySpecialty(spec.id)
+          .then((docs) => setState(() => _physicians = docs))
+          .catchError((_) =>
+              setState(() => _errorMessage = 'Erreur chargement praticiens'));
+    }
+  }
+
+  Future<void> _onSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() {
-      _selectedClinic = mockClinic;
-      _isLoading = false;
-      _updateAvailableTimes();
+      _isSubmitting = true;
+      _errorMessage = null;
     });
-  }
 
-  void _updateAvailableTimes() {
-    // Simuler des horaires disponibles en fonction du jour sélectionné
-    final day = DateFormat('EEEE', 'fr_FR').format(_selectedDate).toLowerCase();
-
-    if (_selectedClinic.schedule[day] == 'Fermé') {
-      _availableTimes = [];
-      _selectedTime = null;
-      return;
-    }
-
-    final schedule = _selectedClinic.schedule[day] as String;
-    final times = schedule.split('-');
-    final startTime = times[0].split(':').map(int.parse).toList();
-    final endTime = times[1].split(':').map(int.parse).toList();
-
-    final startHour = startTime[0];
-    final endHour = endTime[0];
-
-    final availableTimes = <String>[];
-
-    for (int hour = startHour; hour < endHour; hour++) {
-      availableTimes.add('$hour:00');
-      availableTimes.add('$hour:30');
-    }
-
-    // Simuler des horaires déjà réservés
-    final bookedTimes = [
-      '10:00',
-      '11:30',
-      '14:00',
-    ];
-
-    setState(() {
-      _availableTimes =
-          availableTimes.where((time) => !bookedTimes.contains(time)).toList();
-      _selectedTime = _availableTimes.isNotEmpty ? _availableTimes[0] : null;
-    });
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 60)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: primaryColor,
-              onPrimary: Colors.white,
-              onSurface: textColor,
-            ),
-          ),
-          child: child!,
+    try {
+      // Si le patient n'existe pas, on le crée
+      if (!_patientExists) {
+        _patientId = await _odoo.createPatient(
+          name: _nameController.text,
+          gender: _selectedGender!,
+          govCode: widget.govCode,
         );
-      },
-    );
-
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-        _updateAvailableTimes();
-      });
-    }
-  }
-
-  void _createAppointment() async {
-    if (_formKey.currentState!.validate()) {
-      if (_selectedService == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Veuillez sélectionner un service'),
-            backgroundColor: errorColor,
-          ),
-        );
-        return;
       }
 
-      if (_selectedTime == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Veuillez sélectionner un horaire disponible'),
-            backgroundColor: errorColor,
-          ),
-        );
-        return;
-      }
+      // Création du rendez-vous
+      final appointmentId = await _odoo.createAppointment(
+        patientId: _patientId,
+        physicianId: _selectedPhysician!.id,
+        productId: 42, // remplacez par l'ID réel de la prestation
+      );
 
-      setState(() {
-        _isSubmitting = true;
-      });
-
-      // Simuler un appel API
-      await Future.delayed(const Duration(seconds: 2));
-
-      setState(() {
-        _isSubmitting = false;
-      });
-
-      // Naviguer vers la page de paiement ou vers l'accueil
-      NavigationHelper.navigateToPayment(context);
+      // Navigation vers le paiement
+      Navigator.pushNamed(
+        context,
+        '/payment',
+        arguments: {'appointmentId': appointmentId},
+      );
+    } catch (e) {
+      setState(() => _errorMessage = 'Erreur : $e');
+    } finally {
+      setState(() => _isSubmitting = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Prendre rendez-vous'),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildClinicInfo(),
-                    const SizedBox(height: 24),
-                    _buildServiceSelector(),
-                    const SizedBox(height: 24),
-                    _buildDateSelector(),
-                    const SizedBox(height: 24),
-                    _buildTimeSelector(),
-                    const SizedBox(height: 32),
-                    CustomButton(
-                      text: 'Confirmer le rendez-vous',
-                      onPressed: _createAppointment,
-                      isLoading: _isSubmitting,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-    );
-  }
-
-  Widget _buildClinicInfo() {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      elevation: 2,
-      child: Padding(
+      appBar: AppBar(title: const Text('Prendre un rendez-vous')),
+      body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Clinique sélectionnée',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.local_hospital,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _selectedClinic.name,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _selectedClinic.address,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: lightTextColor,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              if (_errorMessage != null) ...[
+                Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                const SizedBox(height: 12),
               ],
-            ),
-          ],
+
+              // Si le patient n'existe pas, on demande nom & genre
+              if (!_patientExists) ...[
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Nom complet'),
+                  validator: (v) => !_patientExists && (v == null || v.isEmpty)
+                      ? 'Obligatoire'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(labelText: 'Genre'),
+                  items: const [
+                    DropdownMenuItem(value: 'M', child: Text('Homme')),
+                    DropdownMenuItem(value: 'F', child: Text('Femme')),
+                  ],
+                  value: _selectedGender,
+                  onChanged: (g) => setState(() => _selectedGender = g),
+                  validator: (v) =>
+                      !_patientExists && v == null ? 'Obligatoire' : null,
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // Spécialité
+              DropdownButtonFormField<Specialty>(
+                decoration: const InputDecoration(labelText: 'Spécialité'),
+                items: _specialties
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
+                    .toList(),
+                value: _selectedSpecialty,
+                onChanged: _onSpecialtyChanged,
+                validator: (v) => v == null ? 'Obligatoire' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Praticien
+              DropdownButtonFormField<Physician>(
+                decoration: const InputDecoration(labelText: 'Praticien'),
+                items: _physicians
+                    .map((p) => DropdownMenuItem(value: p, child: Text(p.name)))
+                    .toList(),
+                value: _selectedPhysician,
+                onChanged: (p) => setState(() => _selectedPhysician = p),
+                validator: (v) => v == null ? 'Obligatoire' : null,
+              ),
+              const Spacer(),
+
+              // Bouton Confirmer
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _onSubmit,
+                  child: _isSubmitting
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Confirmer'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildServiceSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Service',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          value: _selectedService,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            hintText: 'Sélectionnez un service',
-          ),
-          items: _selectedClinic.services.map((service) {
-            return DropdownMenuItem<String>(
-              value: service,
-              child: Text(service),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedService = value;
-            });
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Veuillez sélectionner un service';
-            }
-            return null;
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDateSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Date',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 16),
-        InkWell(
-          onTap: () => _selectDate(context),
-          borderRadius: BorderRadius.circular(8),
-          child: InputDecorator(
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(_selectedDate),
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const Icon(Icons.calendar_today, size: 20),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimeSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Horaire',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 16),
-        _availableTimes.isEmpty
-            ? Text(
-                'Aucun horaire disponible pour cette date',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: errorColor),
-              )
-            : DropdownButtonFormField<String>(
-                value: _selectedTime,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  hintText: 'Sélectionnez un horaire',
-                ),
-                items: _availableTimes.map((time) {
-                  return DropdownMenuItem<String>(
-                    value: time,
-                    child: Text(time),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedTime = value;
-                  });
-                },
-                validator: (value) {
-                  if (_availableTimes.isNotEmpty &&
-                      (value == null || value.isEmpty)) {
-                    return 'Veuillez sélectionner un horaire';
-                  }
-                  return null;
-                },
-              ),
-      ],
     );
   }
 }

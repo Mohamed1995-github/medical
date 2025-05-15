@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 import '../config/routes.dart';
 import '../config/theme.dart';
 import '../models/user.dart';
@@ -13,7 +16,16 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   bool _isLoading = true;
-  late User _user;
+  int? _userId;
+  int? _partnerId;
+  String _name = '';
+  String _email = '';
+  String _phone = '';
+  String _cni = '';
+  String? _profileImageUrl;
+
+  final ImagePicker _picker = ImagePicker();
+  XFile? _imageFile;
 
   @override
   void initState() {
@@ -22,40 +34,51 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadUserProfile() async {
-    // Simuler un chargement depuis l'API
-    await Future.delayed(const Duration(seconds: 1));
+    setState(() => _isLoading = true);
 
-    // Données fictives pour l'exemple
-    final mockUser = User(
-      id: 'user123',
-      username: 'Jean Dupont',
-      phoneNumber: '+33 6 12 34 56 78',
-      cni: 'AB123456',
-      profileImage: null,
-    );
+    final prefs = await SharedPreferences.getInstance();
+    _userId = prefs.getInt('user_id');
+    _partnerId = prefs.getInt('partner_id');
+    _name = prefs.getString('name') ?? '';
+    _email = prefs.getString('email') ?? '';
+    _phone = prefs.getString('phone') ?? '';
+    _cni = prefs.getString('cni') ?? '';
+    _profileImageUrl = prefs.getString('profileImage');
 
-    setState(() {
-      _user = mockUser;
-      _isLoading = false;
-    });
+    setState(() => _isLoading = false);
   }
 
-  void _logout() {
-    showDialog(
+  Future<void> _pickImage() async {
+    try {
+      final picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 600,
+        imageQuality: 80,
+      );
+      if (picked != null) {
+        setState(() {
+          _imageFile = picked;
+        });
+        // TODO: upload picked.path to server, then save new URL in prefs
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de la sélection de l\'image: \$e');
+    }
+  }
+
+  void _logout() async {
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Déconnexion'),
         content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('Annuler'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              NavigationHelper.navigateToLogin(context);
-            },
+            onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(
               foregroundColor: errorColor,
             ),
@@ -64,6 +87,11 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
     );
+    if (confirm == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      NavigationHelper.navigateToLogin(context);
+    }
   }
 
   @override
@@ -83,7 +111,6 @@ class _ProfilePageState extends State<ProfilePage> {
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _buildProfileHeader(),
                   const SizedBox(height: 32),
@@ -106,37 +133,30 @@ class _ProfilePageState extends State<ProfilePage> {
             color: Colors.grey[300],
             shape: BoxShape.circle,
           ),
-          child: _user.profileImage != null
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(60),
-                  child: Image.network(
-                    _user.profileImage!,
-                    fit: BoxFit.cover,
-                  ),
-                )
-              : Icon(
-                  Icons.person,
-                  size: 60,
-                  color: Colors.grey[600],
-                ),
+          child: ClipOval(
+            child: _imageFile != null
+                ? Image.file(File(_imageFile!.path), fit: BoxFit.cover)
+                : (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
+                    ? Image.network(_profileImageUrl!, fit: BoxFit.cover)
+                    : Icon(Icons.person, size: 60, color: Colors.grey[600]),
+          ),
         ),
         const SizedBox(height: 16),
         Text(
-          _user.username,
-          style: Theme.of(context).textTheme.displaySmall,
+          _name,
+          style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 4),
         Text(
-          _user.phoneNumber,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: lightTextColor,
-              ),
+          _phone,
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: lightTextColor),
         ),
         const SizedBox(height: 16),
         OutlinedButton.icon(
-          onPressed: () {
-            // Logique pour modifier la photo de profil
-          },
+          onPressed: _pickImage,
           icon: const Icon(Icons.camera_alt),
           label: const Text('Modifier la photo'),
         ),
@@ -146,9 +166,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildProfileInfo() {
     return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -157,14 +175,14 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             Text(
               'Informations personnelles',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('Nom d\'utilisateur', _user.username),
+            _buildInfoRow('Nom d\'utilisateur', _name),
             const Divider(),
-            _buildInfoRow('Numéro de téléphone', _user.phoneNumber),
+            _buildInfoRow('Numéro de téléphone', _phone),
             const Divider(),
-            _buildInfoRow('Numéro CNI', _user.cni),
+            _buildInfoRow('Numéro CNI', _cni),
           ],
         ),
       ),
@@ -179,15 +197,14 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: lightTextColor,
-                ),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
           Text(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -199,37 +216,25 @@ class _ProfilePageState extends State<ProfilePage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         CustomButton(
-          text: 'Modifier le profil',
-          onPressed: () {
-            // Navigation vers la page de modification du profil
-          },
-          icon: Icons.edit,
-        ),
+            text: 'Modifier le profil', onPressed: () {}, icon: Icons.edit),
         const SizedBox(height: 12),
         CustomButton(
-          text: 'Changer le mot de passe',
-          onPressed: () {
-            // Navigation vers la page de changement de mot de passe
-          },
-          type: ButtonType.outline,
-          icon: Icons.lock,
-        ),
+            text: 'Changer le mot de passe',
+            onPressed: () {},
+            type: ButtonType.outline,
+            icon: Icons.lock),
         const SizedBox(height: 12),
         CustomButton(
-          text: 'Mes paiements',
-          onPressed: () {
-            // Navigation vers la page des paiements
-          },
-          type: ButtonType.outline,
-          icon: Icons.payment,
-        ),
+            text: 'Mes paiements',
+            onPressed: () {},
+            type: ButtonType.outline,
+            icon: Icons.payment),
         const SizedBox(height: 24),
         CustomButton(
-          text: 'Se déconnecter',
-          onPressed: _logout,
-          type: ButtonType.text,
-          icon: Icons.exit_to_app,
-        ),
+            text: 'Se déconnecter',
+            onPressed: _logout,
+            type: ButtonType.text,
+            icon: Icons.exit_to_app),
       ],
     );
   }

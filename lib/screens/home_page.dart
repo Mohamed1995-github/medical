@@ -67,6 +67,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _navigateToCreateAppointment() {
+    // Passage par la liste des cliniques
     NavigationHelper.navigateToClinics(context);
   }
 
@@ -75,7 +76,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _cancelAppointment(Appointment appointment) {
-    // Logique d'annulation
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -89,7 +89,6 @@ class _HomePageState extends State<HomePage> {
           ),
           TextButton(
             onPressed: () {
-              // Implémentation de l'annulation du rendez-vous
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -208,6 +207,10 @@ class _HomePageState extends State<HomePage> {
             NavigationHelper.navigateToHistory(context);
             break;
           case 2:
+            // Navigation vers la liste des cliniques
+            NavigationHelper.navigateToClinics(context);
+            break;
+          case 3:
             NavigationHelper.navigateToProfile(context);
             break;
         }
@@ -220,6 +223,10 @@ class _HomePageState extends State<HomePage> {
         BottomNavigationBarItem(
           icon: Icon(Icons.history),
           label: 'Historique',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.local_hospital),
+          label: 'Cliniques',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person),

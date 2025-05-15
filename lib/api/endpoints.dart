@@ -1,34 +1,22 @@
-class Endpoints {
-  // URL de base de l'API Odoo
+// lib/api/endpoints.dart
+
+abstract class Endpoints {
   static const String baseUrl = 'https://abc-hms-pro.odoo.com/odoo/api';
 
-  // Endpoints d'authentification
-  static const String register = '/si7a/create';
+  /// SMS / Auth
+  static const String sendCode = '/si7a/send_code';
+  static const String register = '/si7a/register';
   static const String login = '/si7a/login';
-  static const String refreshToken = '/si7a/refresh-token';
-  static const String checkStatus = '/si7a/check-status';
+  static const String resetPassword = '/si7a/reset_password';
 
-  // Endpoints pour les utilisateurs
-  static const String users = '/si7a/users';
-  static String userById(String userId) => '$users/$userId';
-  static String userProfile(String userId) => '$users/$userId/profile';
+  /// Cliniques / Patients / RDV
+  static const String getClinics = '/si7a/cliniques';
+  static const String createPatient = '/si7a/create_patient';
+  static const String checkPatientExists = '/si7a/check_patient_exists';
+  static const String createAppointment = '/si7a/create_appointment';
 
-  // Endpoints pour les cliniques
-  static const String clinics = '/si7a/clinics';
-  static String clinicById(String clinicId) => '$clinics/$clinicId';
-  static String clinicServices(String clinicId) =>
-      '$clinics/$clinicId/services';
-  static String clinicAvailability(String clinicId) =>
-      '$clinics/$clinicId/availability';
-
-  // Endpoints pour les rendez-vous
-  static const String appointments = '/si7a/appointments';
-  static String appointmentById(String appointmentId) =>
-      '$appointments/$appointmentId';
-  static String userAppointments(String userId) =>
-      '$users/$userId/appointments';
-  static String appointmentPayment(String appointmentId) =>
-      '$appointments/$appointmentId/payment';
-  static String cancelAppointment(String appointmentId) =>
-      '$appointments/$appointmentId/cancel';
+  /// Spécialités / Praticiens
+  static const String getSpecialties = '/si7a/get_specialties';
+  static const String getPhysiciansBySpecialty =
+      '/si7a/get_physicians_by_specialty';
 }

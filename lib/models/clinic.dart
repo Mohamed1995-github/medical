@@ -1,48 +1,54 @@
+// lib/models/clinic.dart
+
+import 'dart:convert';
+import 'dart:typed_data';
+
 class Clinic {
-  final String id;
+  final int id;
   final String name;
   final String address;
-  final String phoneNumber;
-  final String? imageUrl;
-  final double rating;
   final List<String> services;
   final Map<String, dynamic> schedule;
+
+  /// Si l’API renvoie un vrai URL, on le met ici ; sinon null
+  final String? imageUrl;
+
+  /// Le payload base64 retourné sous "image"
+  final String? imageBase64;
 
   Clinic({
     required this.id,
     required this.name,
     required this.address,
-    required this.phoneNumber,
-    this.imageUrl,
-    required this.rating,
     required this.services,
     required this.schedule,
+    this.imageUrl,
+    this.imageBase64,
   });
 
-  // Conversion depuis et vers JSON pour utilisation avec API
   factory Clinic.fromJson(Map<String, dynamic> json) {
     return Clinic(
-      id: json['id'],
-      name: json['name'],
-      address: json['address'],
-      phoneNumber: json['phoneNumber'],
-      imageUrl: json['imageUrl'],
-      rating: json['rating'].toDouble(),
-      services: List<String>.from(json['services']),
-      schedule: Map<String, dynamic>.from(json['schedule']),
+      id: json['id'] as int,
+      name: (json['name'] as String?) ?? 'Clinique sans nom',
+      address: (json['address'] as String?) ?? 'Adresse non renseignée',
+      services: json['services'] is List
+          ? List<String>.from(json['services'] as List)
+          : <String>[],
+      schedule: json['schedule'] is Map
+          ? Map<String, dynamic>.from(json['schedule'] as Map)
+          : <String, dynamic>{},
+      imageUrl: json['url'] is String ? json['url'] as String : null,
+      imageBase64: json['image'] is String ? json['image'] as String : null,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'address': address,
-      'phoneNumber': phoneNumber,
-      'imageUrl': imageUrl,
-      'rating': rating,
-      'services': services,
-      'schedule': schedule,
-    };
+  /// Retourne le contenu décodé en bytes pour Image.memory
+  Uint8List? get imageBytes {
+    if (imageBase64 == null) return null;
+    try {
+      return base64Decode(imageBase64!);
+    } catch (_) {
+      return null;
+    }
   }
 }

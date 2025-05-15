@@ -1,8 +1,10 @@
+// lib/config/routes.dart
+
 import 'package:flutter/material.dart';
 import '../screens/login_page.dart';
 import '../screens/register_page_odoo.dart';
-import '../screens/clinic_list_page.dart' as clinic_list;
-// Make sure the path and class name match your project structure
+import '../screens/clinic_list_page.dart';
+import '../models/clinic.dart';
 import '../screens/home_page.dart';
 import '../screens/profile_page.dart';
 import '../screens/history_page.dart';
@@ -10,60 +12,60 @@ import '../screens/create_appointment_page.dart';
 import '../screens/payment_page.dart';
 import '../screens/verify_sms_code_page.dart';
 
-// Définition des routes de l'application
 final Map<String, WidgetBuilder> appRoutes = {
-  '/login': (context) => LoginPage(),
-  '/register': (context) => RegisterPageOdoo(),
-  '/verify-sms-code': (context) {
-    // Assuming you have a VerifySmsCodePage that takes phoneNumber and userId as parameters
-    final args =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+  '/login': (c) => LoginPage(),
+  '/register': (c) => RegisterPageOdoo(),
+  '/verify-sms-code': (c) {
+    final args = ModalRoute.of(c)!.settings.arguments as Map<String, dynamic>;
     return VerifySmsCodePage(
-        phoneNumber: args['phoneNumber'], userId: args['userId']);
+      phoneNumber: args['phoneNumber'] as String,
+      userId: args['userId'] as String,
+    );
   },
-  // You must provide actual values for phoneNumber and userId here or handle them dynamically
-  // Example with placeholder values:
-  // '/register': (context) => VerifySmsCodePage(phoneNumber: '1234567890', userId: 1),
-  // Or remove this route if you do not have default values
-  '/clinics': (context) => clinic_list.ClinicListPage(),
-  '/home': (context) => HomePage(),
-  '/profile': (context) => ProfilePage(),
-  '/history': (context) => HistoryPage(),
-  '/create-appointment': (context) => CreateAppointmentPage(),
-  '/payment': (context) => PaymentPage(),
+  '/clinics': (c) => ClinicListPage(),
+  '/home': (c) => HomePage(),
+  '/profile': (c) => ProfilePage(),
+  '/history': (c) => HistoryPage(),
+  '/create-appointment': (c) {
+    final args = ModalRoute.of(c)!.settings.arguments as Map<String, dynamic>;
+    return CreateAppointmentPage(
+      clinic: args['clinic']
+          as Clinic, // plus de clinic_list.Clinic :contentReference[oaicite:2]{index=2}:contentReference[oaicite:3]{index=3}
+      govCode: args['govcode'] as String,
+    );
+  },
+  '/payment': (c) => PaymentPage(),
 };
 
-// Navigation helper
 class NavigationHelper {
-  static void navigateToLogin(BuildContext context) {
-    Navigator.pushReplacementNamed(context, '/login');
-  }
+  static void navigateToLogin(BuildContext c) =>
+      Navigator.pushReplacementNamed(c, '/login');
+  static void navigateToRegister(BuildContext c) =>
+      Navigator.pushNamed(c, '/register');
+  static void navigateToHome(BuildContext c) =>
+      Navigator.pushReplacementNamed(c, '/home');
+  static void navigateToClinics(BuildContext c) =>
+      Navigator.pushNamed(c, '/clinics');
+  static void navigateToHistory(BuildContext c) =>
+      Navigator.pushNamed(c, '/history');
 
-  static void navigateToRegister(BuildContext context) {
-    Navigator.pushNamed(context, '/register');
-  }
+  static void navigateToCreateAppointment(
+    BuildContext c, {
+    required Clinic clinic,
+    required String govCode,
+  }) =>
+      Navigator.pushNamed(
+        c,
+        '/create-appointment',
+        arguments: {
+          'clinic': clinic,
+          'govCode': govCode,
+        },
+      );
 
-  static void navigateToHome(BuildContext context) {
-    Navigator.pushReplacementNamed(context, '/home');
-  }
+  static void navigateToPayment(BuildContext c, {Object? arguments}) =>
+      Navigator.pushNamed(c, '/payment', arguments: arguments);
 
-  static void navigateToClinics(BuildContext context) {
-    Navigator.pushNamed(context, '/clinics');
-  }
-
-  static void navigateToProfile(BuildContext context) {
-    Navigator.pushNamed(context, '/profile');
-  }
-
-  static void navigateToHistory(BuildContext context) {
-    Navigator.pushNamed(context, '/history');
-  }
-
-  static void navigateToCreateAppointment(BuildContext context) {
-    Navigator.pushNamed(context, '/create-appointment');
-  }
-
-  static void navigateToPayment(BuildContext context, {Object? arguments}) {
-    Navigator.pushNamed(context, '/payment', arguments: arguments);
-  }
+  static void navigateToProfile(BuildContext c) => Navigator.pushNamed(c,
+      '/profile'); // ajouté pour régler l'erreur :contentReference[oaicite:4]{index=4}:contentReference[oaicite:5]{index=5}
 }
