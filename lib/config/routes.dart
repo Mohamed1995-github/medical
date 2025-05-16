@@ -29,9 +29,8 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/create-appointment': (c) {
     final args = ModalRoute.of(c)!.settings.arguments as Map<String, dynamic>;
     return CreateAppointmentPage(
-      clinic: args['clinic']
-          as Clinic, // plus de clinic_list.Clinic :contentReference[oaicite:2]{index=2}:contentReference[oaicite:3]{index=3}
-      govCode: args['govcode'] as String,
+      clinic: args['clinic'] as Clinic,
+      govCode: args['govCode'] as String,
     );
   },
   '/payment': (c) => PaymentPage(),

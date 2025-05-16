@@ -1,12 +1,16 @@
 // lib/screens/clinic_list_page.dart
 
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:medicall_app/models/clinic.dart';
 import 'package:medicall_app/services/clinic_service.dart';
 import 'package:medicall_app/services/auth_service.dart';
-import 'package:medicall_app/screens/create_appointment_page.dart';
+// **Ajout** de cet import pour NavigationHelper
+import 'package:medicall_app/config/routes.dart';
 
 class ClinicListPage extends StatefulWidget {
   const ClinicListPage({Key? key}) : super(key: key);
@@ -21,7 +25,6 @@ class _ClinicListPageState extends State<ClinicListPage> {
   @override
   void initState() {
     super.initState();
-    // Charger les cliniques après build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ClinicService>().fetchClinics();
     });
@@ -36,21 +39,19 @@ class _ClinicListPageState extends State<ClinicListPage> {
     super.dispose();
   }
 
-  void _openAppointmentPage(Clinic clinic) {
+  void _goToAppointment(Clinic clinic) {
     final user = context.read<AuthService>().currentUser;
     if (user == null) {
       Navigator.pushReplacementNamed(context, '/login');
       return;
     }
-    final govCode = user.cni; // Assurez-vous que cni est bien votre gov_code
+    final govCode = user.cni; // Votre numéro de CNI
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => CreateAppointmentPage(
-          clinic: clinic,
-          govCode: govCode,
-        ),
-      ),
+    // On utilise NavigationHelper défini dans routes.dart
+    NavigationHelper.navigateToCreateAppointment(
+      context,
+      clinic: clinic,
+      govCode: govCode,
     );
   }
 
@@ -70,7 +71,6 @@ class _ClinicListPageState extends State<ClinicListPage> {
       ),
       body: Column(
         children: [
-          // Recherche
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
@@ -78,13 +78,12 @@ class _ClinicListPageState extends State<ClinicListPage> {
               decoration: InputDecoration(
                 hintText: 'Rechercher une clinique…',
                 prefixIcon: const Icon(Icons.search),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ),
-
-          // Liste
           Expanded(
             child: service.isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -94,7 +93,7 @@ class _ClinicListPageState extends State<ClinicListPage> {
                         ? const Center(child: Text('Aucune clinique trouvée'))
                         : ListView.builder(
                             itemCount: service.clinics.length,
-                            itemBuilder: (context, idx) {
+                            itemBuilder: (_, idx) {
                               final clinic = service.clinics[idx];
                               Widget leading;
                               if (clinic.imageBytes != null) {
@@ -108,19 +107,23 @@ class _ClinicListPageState extends State<ClinicListPage> {
                                   ),
                                 );
                               } else {
-                                leading = const Icon(Icons.local_hospital,
-                                    size: 60, color: Colors.grey);
+                                leading = const Icon(
+                                  Icons.local_hospital,
+                                  size: 60,
+                                  color: Colors.grey,
+                                );
                               }
 
                               return Card(
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 6),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 elevation: 3,
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(12),
-                                  onTap: () => _openAppointmentPage(clinic),
+                                  onTap: () => _goToAppointment(clinic),
                                   child: Padding(
                                     padding: const EdgeInsets.all(12),
                                     child: Row(
@@ -132,22 +135,25 @@ class _ClinicListPageState extends State<ClinicListPage> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Text(clinic.name,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .titleMedium),
+                                              Text(
+                                                clinic.name,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleMedium,
+                                              ),
                                               const SizedBox(height: 4),
-                                              // Utilisation de `address`, pas `location`
-                                              Text(clinic.address,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium),
+                                              Text(
+                                                clinic.address,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium,
+                                              ),
                                             ],
                                           ),
                                         ),
                                         ElevatedButton(
                                           onPressed: () =>
-                                              _openAppointmentPage(clinic),
+                                              _goToAppointment(clinic),
                                           child: const Text('Réserver'),
                                         ),
                                       ],

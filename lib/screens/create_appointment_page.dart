@@ -29,9 +29,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
   late int _patientId;
   bool _patientExists = false;
 
-  // Champs de création de patient
+  // Champs utilisés seulement si le patient n'existe pas
   final _nameController = TextEditingController();
-  String? _selectedGender; // 'M' ou 'F'
+  String? _selectedGender;
 
   List<Specialty> _specialties = [];
   Specialty? _selectedSpecialty;
@@ -67,7 +67,6 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
         }
       });
     } catch (_) {
-      // Si l'appel échoue, on considérera qu'il n'existe pas
       setState(() => _patientExists = false);
     }
   }
@@ -105,7 +104,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
     });
 
     try {
-      // Si le patient n'existe pas, on le crée
+      // Si patient inexistant, on le crée d'abord
       if (!_patientExists) {
         _patientId = await _odoo.createPatient(
           name: _nameController.text,
@@ -114,14 +113,13 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
         );
       }
 
-      // Création du rendez-vous
+      // Puis on crée le rendez-vous
       final appointmentId = await _odoo.createAppointment(
         patientId: _patientId,
         physicianId: _selectedPhysician!.id,
-        productId: 42, // remplacez par l'ID réel de la prestation
+        productId: 42, // à remplacer par l'ID réel
       );
 
-      // Navigation vers le paiement
       Navigator.pushNamed(
         context,
         '/payment',
@@ -149,7 +147,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
                 const SizedBox(height: 12),
               ],
 
-              // Si le patient n'existe pas, on demande nom & genre
+              // Nom & genre seulement si nouveau patient
               if (!_patientExists) ...[
                 TextFormField(
                   controller: _nameController,
