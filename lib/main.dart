@@ -2,15 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:medical_app/NetworkManager/odoo_api_client.dart';
-import 'package:medical_app/providers/auth_provider.dart';
+import 'package:medicall_app/NetworkManager/odoo_api_client.dart';
+import 'package:medicall_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'config/routes.dart';
 import 'config/theme.dart';
-
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

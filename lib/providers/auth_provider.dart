@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:medical_app/Models/Authentication/register_response.dart';
-import 'package:medical_app/Models/Authentication/send_sms_code_response.dart';
-import 'package:medical_app/NetworkManager/odoo_api_client.dart';
+import 'package:medicall_app/Models/Authentication/register_response.dart';
+import 'package:medicall_app/Models/Authentication/send_sms_code_response.dart';
+import 'package:medicall_app/NetworkManager/odoo_api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:medical_app/Models/Authentication/login_response.dart';
+import 'package:medicall_app/Models/Authentication/login_response.dart';
 
 class AuthProvider with ChangeNotifier {
   final OdooApiClient _apiClient;
@@ -61,7 +61,6 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-
   Future<void> sendVerificationCode(String phone) async {
     try {
       SendSmsCodeResponse response = await _apiClient.sendVerificationCode({
@@ -85,7 +84,7 @@ class AuthProvider with ChangeNotifier {
     required String code,
   }) async {
     try {
-       RegisterResponse response = await _apiClient.registerUser({
+      RegisterResponse response = await _apiClient.registerUser({
         "partner_name": name,
         "partner_phone": phone,
         "partner_email": email,

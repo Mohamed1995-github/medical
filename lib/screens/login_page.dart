@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:medical_app/providers/auth_provider.dart';
+import 'package:medicall_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
