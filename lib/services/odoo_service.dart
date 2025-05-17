@@ -4,13 +4,15 @@ import '../api/odoo_api_client.dart';
 import '../api/endpoints.dart';
 import '../models/specialty.dart';
 import '../models/physician.dart';
+import 'package:flutter/foundation.dart';
 
 class OdooService {
   final OdooApiClient _apiClient;
 
-  OdooService({required OdooApiClient apiClient}) : _apiClient = apiClient;
+  OdooService({OdooApiClient? apiClient})
+      : _apiClient = apiClient ?? OdooApiClient();
 
-  /// 1) Récupère la liste des spécialités
+  /// 1) Récupère les spécialités
   Future<List<Specialty>> getSpecialties() async {
     final resp = await _apiClient.jsonRpcCall(Endpoints.getSpecialties, {});
     final List data = resp['data'] as List;
@@ -19,7 +21,7 @@ class OdooService {
         .toList();
   }
 
-  /// 2) Récupère les praticiens pour une spécialité donnée
+  /// 2) Récupère les praticiens par spécialité
   Future<List<Physician>> getPhysiciansBySpecialty(int specialtyId) async {
     final resp = await _apiClient.jsonRpcCall(
       Endpoints.getPhysiciansBySpecialty,
@@ -31,13 +33,16 @@ class OdooService {
         .toList();
   }
 
-  /// 3) Vérifie si un patient existe (via son numéro de CNI ou govCode)
-  Future<bool> checkPatientExists(String govCode) async {
+  /// 3) Vérifie si un patient existe et renvoie { exists, id }
+  Future<Map<String, dynamic>> checkPatientExists(String govCode) async {
     final resp = await _apiClient.jsonRpcCall(
       Endpoints.checkPatientExists,
       {'gov_code': govCode},
     );
-    return resp['exists'] as bool;
+    return {
+      'exists': resp['exists'] as bool,
+      'id': resp['id'] as int?,
+    };
   }
 
   /// 4) Crée un patient et retourne son ID
@@ -46,6 +51,7 @@ class OdooService {
     required String gender,
     required String govCode,
   }) async {
+    debugPrint('➕ createPatient pour $govCode');
     final resp = await _apiClient.jsonRpcCall(
       Endpoints.createPatient,
       {

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../screens/login_page.dart';
 import '../screens/register_page_odoo.dart';
+import '../screens/verify_sms_code_page.dart';
 import '../screens/clinic_list_page.dart';
 import '../models/clinic.dart';
 import '../screens/home_page.dart';
@@ -10,7 +11,6 @@ import '../screens/profile_page.dart';
 import '../screens/history_page.dart';
 import '../screens/create_appointment_page.dart';
 import '../screens/payment_page.dart';
-import '../screens/verify_sms_code_page.dart';
 
 final Map<String, WidgetBuilder> appRoutes = {
   '/login': (c) => LoginPage(),
@@ -26,6 +26,8 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/home': (c) => HomePage(),
   '/profile': (c) => ProfilePage(),
   '/history': (c) => HistoryPage(),
+
+  // 🚑 Create Appointment : on lit clinic & govCode depuis arguments
   '/create-appointment': (c) {
     final args = ModalRoute.of(c)!.settings.arguments as Map<String, dynamic>;
     return CreateAppointmentPage(
@@ -33,6 +35,7 @@ final Map<String, WidgetBuilder> appRoutes = {
       govCode: args['govCode'] as String,
     );
   },
+
   '/payment': (c) => PaymentPage(),
 };
 
@@ -62,9 +65,13 @@ class NavigationHelper {
         },
       );
 
-  static void navigateToPayment(BuildContext c, {Object? arguments}) =>
-      Navigator.pushNamed(c, '/payment', arguments: arguments);
+  static void navigateToPayment(BuildContext c, {required int appointmentId}) =>
+      Navigator.pushNamed(
+        c,
+        '/payment',
+        arguments: {'appointmentId': appointmentId},
+      );
 
-  static void navigateToProfile(BuildContext c) => Navigator.pushNamed(c,
-      '/profile'); // ajouté pour régler l'erreur :contentReference[oaicite:4]{index=4}:contentReference[oaicite:5]{index=5}
+  static void navigateToProfile(BuildContext c) =>
+      Navigator.pushNamed(c, '/profile');
 }

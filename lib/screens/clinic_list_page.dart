@@ -42,7 +42,11 @@ class _ClinicListPageState extends State<ClinicListPage> {
   void _goToAppointment(Clinic clinic) {
     final user = context.read<AuthService>().currentUser;
     if (user == null) {
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushReplacementNamed(context, '/create-appointment',
+          arguments: {
+            'clinic': clinic,
+            'govCode': 'govCode',
+          });
       return;
     }
     final govCode = user.cni; // Votre numéro de CNI

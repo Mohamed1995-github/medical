@@ -24,12 +24,10 @@ class CreateAppointmentPage extends StatefulWidget {
 
 class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
   final _formKey = GlobalKey<FormState>();
-
   late final OdooService _odoo;
   late int _patientId;
   bool _patientExists = false;
 
-  // Champs utilisés seulement si le patient n'existe pas
   final _nameController = TextEditingController();
   String? _selectedGender;
 
@@ -46,7 +44,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
   void initState() {
     super.initState();
     _odoo = context.read<OdooService>();
-    _patientId = int.tryParse(widget.govCode) ?? 0;
+    _patientId = 0;
     _checkPatientExists();
     _loadSpecialties();
   }
@@ -58,15 +56,17 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
   }
 
   Future<void> _checkPatientExists() async {
+    debugPrint('🔍 checkPatientExists pour ${widget.govCode}');
     try {
-      final exists = await _odoo.checkPatientExists(widget.govCode);
+      final result = await _odoo.checkPatientExists(widget.govCode);
       setState(() {
-        _patientExists = exists;
-        if (exists) {
-          _patientId = int.parse(widget.govCode);
+        _patientExists = result['exists'] as bool;
+        if (_patientExists) {
+          _patientId = result['id'] as int;
         }
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Erreur checkPatientExists: $e');
       setState(() => _patientExists = false);
     }
   }
@@ -104,8 +104,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
     });
 
     try {
-      // Si patient inexistant, on le crée d'abord
       if (!_patientExists) {
+        debugPrint('➕ createPatient pour ${widget.govCode}');
         _patientId = await _odoo.createPatient(
           name: _nameController.text,
           gender: _selectedGender!,
@@ -113,11 +113,11 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
         );
       }
 
-      // Puis on crée le rendez-vous
+      debugPrint('🚀 createAppointment patientId=$_patientId');
       final appointmentId = await _odoo.createAppointment(
         patientId: _patientId,
         physicianId: _selectedPhysician!.id,
-        productId: 42, // à remplacer par l'ID réel
+        productId: 42,
       );
 
       Navigator.pushNamed(
@@ -146,8 +146,6 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
                 Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
                 const SizedBox(height: 12),
               ],
-
-              // Nom & genre seulement si nouveau patient
               if (!_patientExists) ...[
                 TextFormField(
                   controller: _nameController,
@@ -170,8 +168,6 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
                 ),
                 const SizedBox(height: 24),
               ],
-
-              // Spécialité
               DropdownButtonFormField<Specialty>(
                 decoration: const InputDecoration(labelText: 'Spécialité'),
                 items: _specialties
@@ -182,8 +178,6 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
                 validator: (v) => v == null ? 'Obligatoire' : null,
               ),
               const SizedBox(height: 16),
-
-              // Praticien
               DropdownButtonFormField<Physician>(
                 decoration: const InputDecoration(labelText: 'Praticien'),
                 items: _physicians
@@ -194,8 +188,6 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
                 validator: (v) => v == null ? 'Obligatoire' : null,
               ),
               const Spacer(),
-
-              // Bouton Confirmer
               SizedBox(
                 width: double.infinity,
                 height: 48,

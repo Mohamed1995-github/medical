@@ -72,7 +72,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _makePayment(Appointment appointment) {
-    NavigationHelper.navigateToPayment(context, arguments: appointment);
+    NavigationHelper.navigateToPayment(context,
+        appointmentId: int.parse(appointment.id));
   }
 
   void _cancelAppointment(Appointment appointment) {
