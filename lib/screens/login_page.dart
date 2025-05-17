@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:medical_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../api/odoo_api_client.dart';
 import '../config/routes.dart';
 import '../config/theme.dart';
-import '../models/user.dart';
-import '../services/auth_service.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 
@@ -36,77 +34,6 @@ class _LoginPageState extends State<LoginPage> {
     setState(() {
       _obscurePassword = !_obscurePassword;
     });
-  }
-
-  String _formatPhoneNumber(String phoneNumber) {
-    phoneNumber = phoneNumber.replaceAll(RegExp(r'\s+'), '');
-    phoneNumber = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
-    if (phoneNumber.startsWith('+')) {
-      phoneNumber = phoneNumber.substring(1);
-    }
-    if (phoneNumber.startsWith('222')) {
-      phoneNumber = phoneNumber.substring(3);
-    }
-    return phoneNumber;
-  }
-
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final phone = _formatPhoneNumber(_phoneController.text.trim());
-      final password = _passwordController.text;
-
-      final client = Provider.of<OdooApiClient>(context, listen: false);
-      final params = {
-        'phone': phone,
-        'password': password,
-      };
-
-      final response = await client.jsonRpcCall('/si7a/login', params);
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (response is Map<String, dynamic> && response['success'] == true) {
-        final prefs = await SharedPreferences.getInstance();
-        // Sauvegarde des données utilisateur
-        await prefs.setInt('user_id', response['user_id'] as int);
-        await prefs.setInt('partner_id', response['partner_id'] as int);
-        await prefs.setString('name', response['name'] as String);
-        final email = response['email'];
-        await prefs.setString('email', email is String ? email : '');
-        await prefs.setString('phone', response['phone'] as String);
-
-        // Initialise le service d'authentification
-        final authService = Provider.of<AuthService>(context, listen: false);
-        await authService.initializeService();
-
-        // Navigation vers l'accueil
-        NavigationHelper.navigateToHome(context);
-      } else {
-        setState(() {
-          _errorMessage =
-              response['message']?.toString() ?? 'Identifiants incorrects';
-        });
-      }
-    } catch (e) {
-      print("Exception lors de la connexion: $e");
-      setState(() {
-        _isLoading = false;
-        if (e is OdooApiException) {
-          _errorMessage = 'Erreur: ${e.message}';
-        } else {
-          _errorMessage = 'Une erreur est survenue: ${e.toString()}';
-        }
-      });
-    }
   }
 
   void _navigateToForgotPassword() {
@@ -188,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 24),
                   CustomButton(
                     text: 'Se connecter',
-                    onPressed: _login,
+                    onPressed: _handleLogin,
                     isLoading: _isLoading,
                   ),
                   const SizedBox(height: 24),
@@ -228,9 +155,9 @@ class _LoginPageState extends State<LoginPage> {
         const SizedBox(height: 8),
         Text(
           'Connectez-vous pour accéder à vos rendez-vous',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: lightTextColor,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: lightTextColor),
           textAlign: TextAlign.center,
         ),
       ],
@@ -253,5 +180,38 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ],
     );
+  }
+
+  void _handleLogin() async {
+    if (_formKey.currentState!.validate()) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      authProvider.clearError();
+
+      setState(() => _isLoading = true);
+
+      final response = await authProvider.login(
+        _phoneController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      setState(() => _isLoading = false);
+
+      if (authProvider.errorMessage == null) {
+        // NavigationHelper.navigateToHome(context);
+      } else {
+        setState(() => _errorMessage = authProvider.errorMessage);
+      }
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = Provider.of<AuthProvider>(context, listen: true);
+    if (authProvider.errorMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() => _errorMessage = authProvider.errorMessage);
+      });
+    }
   }
 }

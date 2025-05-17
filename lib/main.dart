@@ -2,41 +2,27 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:medical_app/NetworkManager/odoo_api_client.dart';
+import 'package:medical_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'config/routes.dart';
 import 'config/theme.dart';
 
-import 'screens/login_page.dart';
-import 'services/auth_service.dart';
-import 'services/clinic_service.dart';
 
-import 'api/odoo_api_client.dart';
-import 'api/auth_api_odoo.dart';
-import 'services/odoo_service.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
+  final apiClient = OdooApiClient.create();
+  final prefs = await SharedPreferences.getInstance();
   runApp(
     MultiProvider(
       providers: [
-        Provider<OdooApiClient>(
-          create: (_) => OdooApiClient(),
-          dispose: (_, c) => c.close(),
-        ),
-        Provider<AuthApiOdoo>(
-          create: (ctx) => AuthApiOdoo(apiClient: ctx.read<OdooApiClient>()),
-        ),
-        ChangeNotifierProvider<AuthService>(
-          create: (_) => AuthService(),
-        ),
-        ChangeNotifierProvider<ClinicService>(
-          create: (ctx) => ClinicService(apiClient: ctx.read<OdooApiClient>()),
-        ),
-        Provider<OdooService>(
-          create: (ctx) => OdooService(apiClient: ctx.read<OdooApiClient>()),
+        Provider<OdooApiClient>(create: (_) => apiClient),
+        ChangeNotifierProvider(
+          create: (context) => AuthProvider(context.read<OdooApiClient>()),
         ),
       ],
       child: MyApp(),

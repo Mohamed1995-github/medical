@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../api/auth_api_odoo.dart';
-import '../api/odoo_api_client.dart';
 import '../config/routes.dart';
 import '../config/theme.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
-import 'dart:convert';
 
-class RegisterPageOdoo extends StatefulWidget {
-  const RegisterPageOdoo({Key? key}) : super(key: key);
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({Key? key}) : super(key: key);
 
   @override
-  _RegisterPageOdooState createState() => _RegisterPageOdooState();
+  _RegisterPageState createState() => _RegisterPageState();
 }
 
-class _RegisterPageOdooState extends State<RegisterPageOdoo> {
+class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -30,10 +28,7 @@ class _RegisterPageOdooState extends State<RegisterPageOdoo> {
   bool _isLoading = false;
   String? _errorMessage;
   bool _acceptTerms = false;
-
-  // États pour le flux d'inscription
-  bool _smsCodeSent = false;
-  String? _smsCode; // Pour stocker le code reçu du serveur
+  bool _codeSent = false;
 
   @override
   void dispose() {
@@ -77,9 +72,7 @@ class _RegisterPageOdooState extends State<RegisterPageOdoo> {
     return phoneNumber;
   }
 
-  // Méthode pour envoyer un code SMS
   Future<void> _sendVerificationCode() async {
-    // Valider le formulaire pour les champs nécessaires
     if (_nameController.text.isEmpty ||
         _phoneController.text.isEmpty ||
         _nniController.text.isEmpty ||
@@ -89,7 +82,6 @@ class _RegisterPageOdooState extends State<RegisterPageOdoo> {
       });
       return;
     }
-
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() {
         _errorMessage = 'Les mots de passe ne correspondent pas';
@@ -103,7 +95,6 @@ class _RegisterPageOdooState extends State<RegisterPageOdoo> {
       });
       return;
     }
-
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -112,77 +103,26 @@ class _RegisterPageOdooState extends State<RegisterPageOdoo> {
     try {
       final phone = _formatPhoneNumber(_phoneController.text.trim());
 
-      // Préparer les paramètres pour l'envoi du code
-      final Map<String, dynamic> params = {
-        "partner_phone": phone,
-        "type": "account_creation"
-      };
-
-      // Faire l'appel API directement avec le client Odoo
-      final client = Provider.of<OdooApiClient>(context, listen: false);
-      final response = await client.jsonRpcCall('/si7a/send_code', params);
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Vérifier la réponse
-      if (response != null && response is Map<String, dynamic>) {
-        if (response.containsKey('success') && response['success'] == true) {
-          // Stocker le code pour le développement/test
-          if (response.containsKey('code')) {
-            _smsCode = response['code'];
-            // En production, ne pas remplir automatiquement
-            if (_smsCode != null) {
-              _codeController.text = _smsCode!;
-            }
-          }
-
-          setState(() {
-            _smsCodeSent = true;
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Code de vérification envoyé avec succès!'),
-              backgroundColor: successColor,
-            ),
-          );
-        } else {
-          setState(() {
-            _errorMessage = response.containsKey('message')
-                ? response['message']
-                : 'Erreur lors de l\'envoi du code';
-          });
-        }
-      } else {
-        setState(() {
-          _errorMessage = 'Réponse invalide du serveur';
-        });
-      }
+      await Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      ).sendVerificationCode(phone);
+      setState(() => _codeSent = true);
     } catch (e) {
-      print("Exception pendant l'envoi du code: $e");
-      setState(() {
-        _isLoading = false;
-        if (e is OdooApiException) {
-          _errorMessage = "Erreur: ${e.message}";
-        } else {
-          _errorMessage = 'Une erreur est survenue: ${e.toString()}';
-        }
-      });
+      setState(() => _errorMessage = e.toString());
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
-  // Méthode pour finaliser l'inscription
-  Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) {
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (!_acceptTerms) {
+      setState(() => _errorMessage = 'You must accept terms & conditions');
       return;
     }
-
-    if (_codeController.text.isEmpty) {
-      setState(() {
-        _errorMessage = 'Veuillez entrer le code de vérification';
-      });
+    if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() => _errorMessage = 'Passwords do not match');
       return;
     }
 
@@ -192,81 +132,29 @@ class _RegisterPageOdooState extends State<RegisterPageOdoo> {
     });
 
     try {
-      final name = _nameController.text.trim();
-      final phone = _formatPhoneNumber(_phoneController.text.trim());
-      final email = _emailController.text.trim().isNotEmpty
-          ? _emailController.text.trim()
-          : null;
-      final nni = _nniController.text.trim();
-      final password = _passwordController.text;
-      final code = _codeController.text.trim();
+      await Provider.of<AuthProvider>(context, listen: false).register(
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        code: _codeController.text.trim(),
+      );
 
-      // Préparer les paramètres pour l'inscription
-      final Map<String, dynamic> params = {
-        "partner_name": name,
-        "partner_phone": phone,
-        if (email != null) "partner_email": email,
-        "type": "account_creation",
-        "nni": nni,
-        "partner_password": password,
-        "code": code
-      };
-
-      // Faire l'appel API directement
-      final client = Provider.of<OdooApiClient>(context, listen: false);
-      final response = await client.jsonRpcCall('/si7a/register', params);
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Traiter la réponse
-      if (response != null && response is Map<String, dynamic>) {
-        if (response.containsKey('success') && response['success'] == true) {
-          // Inscription réussie
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Compte créé avec succès!'),
-              backgroundColor: successColor,
-            ),
-          );
-
-          // Naviguer vers la page de connexion
-          Future.delayed(Duration(seconds: 1), () {
-            NavigationHelper.navigateToLogin(context);
-          });
-        } else {
-          // Afficher le message d'erreur
-          setState(() {
-            _errorMessage = response.containsKey('message')
-                ? response['message']
-                : 'Erreur lors de l\'inscription';
-          });
-        }
-      } else {
-        setState(() {
-          _errorMessage = 'Réponse invalide du serveur';
-        });
-      }
+      // Navigate after successful registration
+      NavigationHelper.navigateToLogin(context);
     } catch (e) {
-      print("Exception pendant l'inscription: $e");
-      setState(() {
-        _isLoading = false;
-        if (e is OdooApiException) {
-          _errorMessage = "Erreur: ${e.message}";
-        } else {
-          _errorMessage = 'Une erreur est survenue: ${e.toString()}';
-        }
-      });
+      setState(() => _errorMessage = e.toString());
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_smsCodeSent ? 'Vérification' : 'Créer un compte'),
-      ),
+      // appBar: AppBar(
+      //   title: Text(_codeSent ? 'Vérification' : 'Créer un compte'),
+      // ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -297,7 +185,7 @@ class _RegisterPageOdooState extends State<RegisterPageOdoo> {
                     ),
 
                   // Afficher le formulaire approprié
-                  _smsCodeSent
+                  _codeSent
                       ? _buildVerificationForm()
                       : _buildRegistrationForm(),
 
@@ -315,13 +203,22 @@ class _RegisterPageOdooState extends State<RegisterPageOdoo> {
   }
 
   Widget _buildHeader() {
-    if (_smsCodeSent) {
+    if (_codeSent) {
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(
-            Icons.sms,
-            size: 80,
-            color: primaryColor,
+          Container(
+            height: 100,
+            width: 100,
+            decoration: BoxDecoration(
+              color: primaryColor,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.local_hospital,
+              size: 60,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 24),
           Text(
@@ -338,16 +235,31 @@ class _RegisterPageOdooState extends State<RegisterPageOdoo> {
           const SizedBox(height: 8),
           Text(
             _phoneController.text,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
         ],
       );
     } else {
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Container(
+            height: 100,
+            width: 100,
+            decoration: BoxDecoration(
+              color: primaryColor,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.local_hospital,
+              size: 60,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 24),
           Text(
             'Inscription',
             style: Theme.of(context).textTheme.displayMedium,
@@ -356,9 +268,9 @@ class _RegisterPageOdooState extends State<RegisterPageOdoo> {
           const SizedBox(height: 8),
           Text(
             'Créez votre compte pour commencer',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: lightTextColor,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: lightTextColor),
             textAlign: TextAlign.center,
           ),
         ],
@@ -526,7 +438,15 @@ class _RegisterPageOdooState extends State<RegisterPageOdoo> {
         // Bouton pour finaliser l'inscription
         CustomButton(
           text: 'Finaliser l\'inscription',
-          onPressed: _register,
+          onPressed: () {
+            if (_codeSent) {
+              _submitForm();
+            } else {
+              setState(
+                () => _errorMessage = 'Veuillez d\'abord envoyer le code',
+              );
+            }
+          },
           isLoading: _isLoading,
         ),
         const SizedBox(height: 16),
