@@ -2,8 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:medicall_app/NetworkManager/odoo_api_client.dart';
-import 'package:medicall_app/providers/auth_provider.dart';
+import 'package:medical_app/NetworkManager/odoo_api_client.dart';
+import 'package:medical_app/screens/Authentication/auth_provider.dart';
+import 'package:medical_app/screens/Clinique/clinique_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -22,7 +23,11 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (context) => AuthProvider(context.read<OdooApiClient>()),
         ),
+        ChangeNotifierProvider(
+          create: (context) => CliniqueProvider(context.read<OdooApiClient>()),
+        ),
       ],
+
       child: MyApp(),
     ),
   );

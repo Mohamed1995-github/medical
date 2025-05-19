@@ -1,19 +1,20 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:medicall_app/Models/Authentication/register_response.dart';
-import 'package:medicall_app/Models/Authentication/send_sms_code_response.dart';
-import 'package:medicall_app/NetworkManager/odoo_api_client.dart';
+import 'package:medical_app/Models/Authentication/register_response.dart';
+import 'package:medical_app/Models/Authentication/send_sms_code_response.dart';
+import 'package:medical_app/Models/base_response.dart';
+import 'package:medical_app/NetworkManager/odoo_api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:medicall_app/Models/Authentication/login_response.dart';
+import 'package:medical_app/Models/Authentication/login_response.dart';
 
 class AuthProvider with ChangeNotifier {
   final OdooApiClient _apiClient;
   bool _isLoading = false;
   String? _errorMessage;
-
+  String? code_sms;
   AuthProvider(this._apiClient);
-
+  String? get code => code_sms;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -58,21 +59,28 @@ class AuthProvider with ChangeNotifier {
 
   void clearError() {
     _errorMessage = null;
+    code_sms = null;
     notifyListeners();
   }
 
-  Future<void> sendVerificationCode(String phone) async {
+  Future<void> sendVerificationCode(String phone, String type) async {
     try {
       SendSmsCodeResponse response = await _apiClient.sendVerificationCode({
         "partner_phone": phone,
-        "type": "account_creation" // Match your Odoo API requirements
+        "type": type, // Match your Odoo API requirements
       });
 
       if (response.success == false) {
-        throw Exception(response.message ?? 'Failed to send verification code');
+        _errorMessage = response.message ?? 'Échec de la connexion';
+      } else {
+        code_sms = response.code;
+        _errorMessage = null; // Clear error message if successful
       }
     } catch (e) {
-      throw Exception('Failed to send code: ${e.toString()}');
+      _errorMessage = 'Erreur de connexion. Veuillez réessayer.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -90,14 +98,41 @@ class AuthProvider with ChangeNotifier {
         "partner_email": email,
         "partner_password": password,
         "code": code,
-        "type": "account_creation"
+        "type": "account_creation",
       });
 
       if (response.success == false) {
-        throw Exception(response.message ?? 'Registration failed');
+        _errorMessage = response.message ?? 'Échec de la connexion';
       }
     } catch (e) {
-      throw Exception('Registration error: ${e.toString()}');
+      _errorMessage = 'Erreur de connexion. Veuillez réessayer.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> resetPassword({
+    required String phone,
+    required String password,
+    required String code,
+  }) async {
+    try {
+      BaseModel response = await _apiClient.resetPassword({
+        "phone": phone,
+        "new_password": password,
+        "code": code,
+        "type": "reset_password",
+      });
+
+      if (response.success == false) {
+        _errorMessage = response.message ?? 'Échec de la connexion';
+      }
+    } catch (e) {
+      _errorMessage = 'Erreur de connexion. Veuillez réessayer.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 }

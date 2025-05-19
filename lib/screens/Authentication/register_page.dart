@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../config/routes.dart';
-import '../config/theme.dart';
-import '../providers/auth_provider.dart';
-import '../widgets/custom_button.dart';
-import '../widgets/custom_text_field.dart';
+import '../../config/routes.dart';
+import '../../config/theme.dart';
+import 'auth_provider.dart';
+import '../../widgets/custom_button.dart';
+import '../../widgets/custom_text_field.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -29,6 +29,7 @@ class _RegisterPageState extends State<RegisterPage> {
   String? _errorMessage;
   bool _acceptTerms = false;
   bool _codeSent = false;
+  String? code_sms;
 
   @override
   void dispose() {
@@ -100,53 +101,49 @@ class _RegisterPageState extends State<RegisterPage> {
       _errorMessage = null;
     });
 
-    try {
-      final phone = _formatPhoneNumber(_phoneController.text.trim());
+    final phone = _formatPhoneNumber(_phoneController.text.trim());
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.clearError();
+    await authProvider.sendVerificationCode(phone,"account_creation");
+    setState(() => _isLoading = false);
 
-      await Provider.of<AuthProvider>(
-        context,
-        listen: false,
-      ).sendVerificationCode(phone);
+    if (authProvider.errorMessage == null) {
       setState(() => _codeSent = true);
-    } catch (e) {
-      setState(() => _errorMessage = e.toString());
-    } finally {
-      setState(() => _isLoading = false);
+      setState(() => code_sms = authProvider.code_sms);
+      // NavigationHelper.navigateToHome(context);
+    } else {
+      setState(() => _errorMessage = authProvider.errorMessage);
     }
   }
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
-    if (!_acceptTerms) {
-      setState(() => _errorMessage = 'You must accept terms & conditions');
+    if (_codeController.text.isEmpty || _codeController.text != code_sms){
+      setState(() => _errorMessage = 'Veuillez entrer le code de vérification');
       return;
     }
-    if (_passwordController.text != _confirmPasswordController.text) {
-      setState(() => _errorMessage = 'Passwords do not match');
-      return;
-    }
-
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    try {
-      await Provider.of<AuthProvider>(context, listen: false).register(
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      authProvider.clearError();
+      await authProvider.register(
         name: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
         code: _codeController.text.trim(),
       );
-
-      // Navigate after successful registration
+ setState(() => _isLoading = false);
+      if (authProvider.errorMessage == null) {
+        // NavigationHelper.navigateToHome(context);
       NavigationHelper.navigateToLogin(context);
-    } catch (e) {
-      setState(() => _errorMessage = e.toString());
-    } finally {
-      setState(() => _isLoading = false);
-    }
+      } else {
+        setState(() => _errorMessage = authProvider.errorMessage);
+      }
+   
   }
 
   @override

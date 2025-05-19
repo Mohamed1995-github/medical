@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:medicall_app/providers/auth_provider.dart';
+import 'package:medical_app/screens/Authentication/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import '../config/routes.dart';
-import '../config/theme.dart';
-import '../widgets/custom_button.dart';
-import '../widgets/custom_text_field.dart';
+import '../../config/routes.dart';
+import '../../config/theme.dart';
+import '../../widgets/custom_button.dart';
+import '../../widgets/custom_text_field.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -23,6 +21,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
+
   @override
   void dispose() {
     _phoneController.dispose();
@@ -37,11 +36,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _navigateToForgotPassword() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fonction de récupération de mot de passe à venir'),
-      ),
-    );
+    NavigationHelper.navigateToResetPassword(context);
   }
 
   @override
@@ -189,7 +184,7 @@ class _LoginPageState extends State<LoginPage> {
 
       setState(() => _isLoading = true);
 
-      final response = await authProvider.login(
+     await authProvider.login(
         _phoneController.text.trim(),
         _passwordController.text.trim(),
       );
@@ -198,6 +193,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (authProvider.errorMessage == null) {
         // NavigationHelper.navigateToHome(context);
+        NavigationHelper.navigateToClinics(context);
       } else {
         setState(() => _errorMessage = authProvider.errorMessage);
       }

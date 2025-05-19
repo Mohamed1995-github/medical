@@ -1,8 +1,10 @@
 // lib/config/routes.dart
 
 import 'package:flutter/material.dart';
-import '../screens/login_page.dart';
-import '../screens/register_page_odoo.dart';
+import 'package:medical_app/screens/Clinique/clinique_page.dart';
+import '../screens/Authentication/login_page.dart';
+import '../screens/Authentication/register_page.dart';
+import '../screens/Authentication/reset_password_page.dart';
 // import '../screens/verify_sms_code_page.dart';
 // import '../screens/clinic_list_page.dart';
 // import '../screens/home_page.dart';
@@ -14,6 +16,8 @@ import '../screens/register_page_odoo.dart';
 final Map<String, WidgetBuilder> appRoutes = {
   '/login': (c) => LoginPage(),
   '/register': (c) => RegisterPage(),
+  '/reset-password': (c) => ResetPasswordPage(),
+  '/clinic-list': (c) => CliniquesListPage(),
   // '/verify-sms-code': (c) {
   //   final args = ModalRoute.of(c)!.settings.arguments as Map<String, dynamic>;
   //   return VerifySmsCodePage(
@@ -43,6 +47,11 @@ class NavigationHelper {
       Navigator.pushReplacementNamed(c, '/login');
   static void navigateToRegister(BuildContext c) =>
       Navigator.pushNamed(c, '/register');
+  static void navigateToResetPassword(BuildContext c) =>
+      Navigator.pushNamed(c, '/reset-password');
+  static void navigateToClinics(BuildContext c) =>
+      Navigator.pushNamed(c, '/clinic-list');
+
   // static void navigateToHome(BuildContext c) =>
   //     Navigator.pushReplacementNamed(c, '/home');
   // static void navigateToClinics(BuildContext c) =>
