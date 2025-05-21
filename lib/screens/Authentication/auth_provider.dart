@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:medical_app/Models/Authentication/register_response.dart';
-import 'package:medical_app/Models/Authentication/send_sms_code_response.dart';
-import 'package:medical_app/Models/base_response.dart';
-import 'package:medical_app/NetworkManager/odoo_api_client.dart';
+import '/Models/Authentication/register_response.dart';
+import '/Models/Authentication/send_sms_code_response.dart';
+import '/Models/base_response.dart';
+import '/NetworkManager/odoo_api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:medical_app/Models/Authentication/login_response.dart';
+import '/Models/Authentication/login_response.dart';
 
 class AuthProvider with ChangeNotifier {
   final OdooApiClient _apiClient;

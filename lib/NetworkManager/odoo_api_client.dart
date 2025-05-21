@@ -1,16 +1,16 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:dio/dio.dart';
-import 'package:medical_app/Models/Appointment/create_appointment_response.dart';
-import 'package:medical_app/Models/Authentication/login_response.dart';
-import 'package:medical_app/Models/Authentication/register_response.dart';
-import 'package:medical_app/Models/Authentication/send_sms_code_response.dart';
-import 'package:medical_app/Models/Clinique/cliniques_response.dart';
-import 'package:medical_app/Models/Medical/physicians_response.dart';
-import 'package:medical_app/Models/Medical/specialties_response.dart';
-import 'package:medical_app/Models/Patient/check_patient_response.dart';
-import 'package:medical_app/Models/Patient/create_patient_response.dart';
-import 'package:medical_app/Models/base_response.dart';
+import '../Models/Appointment/create_appointment_response.dart';
+import '../Models/Authentication/login_response.dart';
+import '../Models/Authentication/register_response.dart';
+import '../Models/Authentication/send_sms_code_response.dart';
+import '../Models/Clinique/cliniques_response.dart';
+import '../Models/Medical/physicians_response.dart';
+import '../Models/Medical/specialties_response.dart';
+import '../Models/Patient/check_patient_response.dart';
+import '../Models/Patient/create_patient_response.dart';
+import '../Models/base_response.dart';
 import 'package:retrofit/retrofit.dart';
 import 'api_url.dart';
 
@@ -38,12 +38,12 @@ abstract class OdooApiClient {
 
     return OdooApiClient(dio);
   }
+
   // Authentication Endpoints
   @POST(ApiUrl.sendCodeUrl)
   Future<SendSmsCodeResponse> sendVerificationCode(
     @Body() Map<String, dynamic> body,
   );
-
 
   @POST(ApiUrl.registerUrl)
   Future<RegisterResponse> registerUser(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:medical_app/config/theme.dart';
-import 'package:medical_app/screens/Clinique/clinique_provider.dart';
+import '/config/theme.dart';
+import '/screens/Clinique/clinique_provider.dart';
 
 class CliniquesListPage extends StatefulWidget {
   const CliniquesListPage({super.key});
@@ -78,11 +78,11 @@ class _CliniquesListPageState extends State<CliniquesListPage> {
                           width: double.infinity,
                           height: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder:
-                              (context, error, stackTrace) => Container(
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.broken_image, size: 50),
-                              ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, size: 50),
+                          ),
                         ),
                       ),
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:medical_app/Models/Clinique/cliniques_response.dart';
-import 'package:medical_app/NetworkManager/odoo_api_client.dart';
+import '/Models/Clinique/cliniques_response.dart';
+import '/NetworkManager/odoo_api_client.dart';
 
 class CliniqueProvider with ChangeNotifier {
   final OdooApiClient _apiClient;
@@ -33,6 +33,7 @@ class CliniqueProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();

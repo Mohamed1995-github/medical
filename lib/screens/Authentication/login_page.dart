@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:medical_app/screens/Authentication/auth_provider.dart';
+import '/screens/Authentication/auth_provider.dart';
 import 'package:provider/provider.dart';
 import '../../config/routes.dart';
 import '../../config/theme.dart';
@@ -20,7 +20,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
-
 
   @override
   void dispose() {
@@ -184,7 +183,7 @@ class _LoginPageState extends State<LoginPage> {
 
       setState(() => _isLoading = true);
 
-     await authProvider.login(
+      await authProvider.login(
         _phoneController.text.trim(),
         _passwordController.text.trim(),
       );

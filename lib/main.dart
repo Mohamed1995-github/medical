@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:medical_app/NetworkManager/odoo_api_client.dart';
-import 'package:medical_app/screens/Authentication/auth_provider.dart';
-import 'package:medical_app/screens/Clinique/clinique_provider.dart';
+import '/NetworkManager/odoo_api_client.dart';
+import '/screens/Authentication/auth_provider.dart';
+import '/screens/Clinique/clinique_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,7 +27,6 @@ Future<void> main() async {
           create: (context) => CliniqueProvider(context.read<OdooApiClient>()),
         ),
       ],
-
       child: MyApp(),
     ),
   );
