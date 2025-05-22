@@ -7,10 +7,11 @@ import '../screens/Authentication/register_page.dart';
 import '../screens/Authentication/reset_password_page.dart';
 // import '../screens/verify_sms_code_page.dart';
 // import '../screens/clinic_list_page.dart';
-// import '../screens/home_page.dart';
+import '../screens/home/home_page.dart';
 // import '../screens/profile_page.dart';
 // import '../screens/history_page.dart';
-import '../screens/clinique/create_appointment.dart';
+// import '../screens/clinique/create_appointment.dart';
+import '../screens/patient/patient.dart';
 // import '../screens/payment_page.dart';
 
 final Map<String, WidgetBuilder> appRoutes = {
@@ -18,7 +19,9 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/register': (c) => RegisterPage(),
   '/reset-password': (c) => ResetPasswordPage(),
   '/clinic-list': (c) => CliniquesListPage(),
-  '/create-appointment': (c) => AddAppointmentScreen(),
+  // '/create-appointment': (c) => CreateAppointmentPage(),
+  '/patient-choice': (c) => PatientChoicePage(),
+
   // '/verify-sms-code': (c) {
   //   final args = ModalRoute.of(c)!.settings.arguments as Map<String, dynamic>;
   //   return VerifySmsCodePage(
@@ -27,7 +30,7 @@ final Map<String, WidgetBuilder> appRoutes = {
   //   );
   // },
   // '/clinics': (c) => ClinicListPage(),
-  // '/home': (c) => HomePage(),
+  '/home': (c) => HomePage(),
   // '/profile': (c) => ProfilePage(),
   // '/history': (c) => HistoryPage(),
 
@@ -53,8 +56,8 @@ class NavigationHelper {
   static void navigateToClinics(BuildContext c) =>
       Navigator.pushNamed(c, '/clinic-list');
   static const routeName = '/create-appointment';
-  // static void navigateToHome(BuildContext c) =>
-  //     Navigator.pushReplacementNamed(c, '/home');
+  static void navigateToHome(BuildContext c) =>
+      Navigator.pushReplacementNamed(c, '/home');
   // static void navigateToClinics(BuildContext c) =>
   //     Navigator.pushNamed(c, '/clinics');
   // static void navigateToHistory(BuildContext c) =>

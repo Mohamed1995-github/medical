@@ -104,7 +104,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final phone = _formatPhoneNumber(_phoneController.text.trim());
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     authProvider.clearError();
-    await authProvider.sendVerificationCode(phone,"account_creation");
+    await authProvider.sendVerificationCode(phone, "account_creation");
     setState(() => _isLoading = false);
 
     if (authProvider.errorMessage == null) {
@@ -118,7 +118,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_codeController.text.isEmpty || _codeController.text != code_sms){
+    if (_codeController.text.isEmpty || _codeController.text != code_sms) {
       setState(() => _errorMessage = 'Veuillez entrer le code de vérification');
       return;
     }
@@ -127,23 +127,23 @@ class _RegisterPageState extends State<RegisterPage> {
       _errorMessage = null;
     });
 
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      authProvider.clearError();
-      await authProvider.register(
-        name: _nameController.text.trim(),
-        phone: _phoneController.text.trim(),
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-        code: _codeController.text.trim(),
-      );
- setState(() => _isLoading = false);
-      if (authProvider.errorMessage == null) {
-        // NavigationHelper.navigateToHome(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.clearError();
+    await authProvider.register(
+      name: _nameController.text.trim(),
+      phone: _phoneController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+      code: _codeController.text.trim(),
+      nni: _nniController.text.trim(),
+    );
+    setState(() => _isLoading = false);
+    if (authProvider.errorMessage == null) {
+      // NavigationHelper.navigateToHome(context);
       NavigationHelper.navigateToLogin(context);
-      } else {
-        setState(() => _errorMessage = authProvider.errorMessage);
-      }
-   
+    } else {
+      setState(() => _errorMessage = authProvider.errorMessage);
+    }
   }
 
   @override

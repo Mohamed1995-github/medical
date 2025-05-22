@@ -1,111 +1,48 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
+import 'package:medicall_app/config/theme.dart';
 
-enum ButtonType {
-  primary,
-  secondary,
-  outline,
-  text,
-}
-
+/// Bouton personnalisable avec styles et loader.
 class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
-  final ButtonType type;
-  final bool isFullWidth;
-  final IconData? icon;
+  final Color backgroundColor;
+  final Color textColor;
+  final Color? borderColor;
   final bool isLoading;
 
   const CustomButton({
     Key? key,
     required this.text,
     required this.onPressed,
-    this.type = ButtonType.primary,
-    this.isFullWidth = true,
-    this.icon,
+    this.backgroundColor = primaryColor,
+    this.textColor = Colors.white,
+    this.borderColor,
     this.isLoading = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    switch (type) {
-      case ButtonType.primary:
-        return _buildPrimaryButton();
-      case ButtonType.secondary:
-        return _buildSecondaryButton();
-      case ButtonType.outline:
-        return _buildOutlineButton();
-      case ButtonType.text:
-        return _buildTextButton();
-      default:
-        return _buildPrimaryButton();
-    }
-  }
-
-  Widget _buildPrimaryButton() {
-    return SizedBox(
-      width: isFullWidth ? double.infinity : null,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        child: _buildButtonContent(),
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: backgroundColor,
+        foregroundColor: textColor,
+        side: borderColor != null ? BorderSide(color: borderColor!) : null,
+        padding: const EdgeInsets.symmetric(vertical: 14),
       ),
-    );
-  }
-
-  Widget _buildSecondaryButton() {
-    return SizedBox(
-      width: isFullWidth ? double.infinity : null,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: accentColor,
-        ),
-        onPressed: isLoading ? null : onPressed,
-        child: _buildButtonContent(),
-      ),
-    );
-  }
-
-  Widget _buildOutlineButton() {
-    return SizedBox(
-      width: isFullWidth ? double.infinity : null,
-      child: OutlinedButton(
-        onPressed: isLoading ? null : onPressed,
-        child: _buildButtonContent(),
-      ),
-    );
-  }
-
-  Widget _buildTextButton() {
-    return TextButton(
       onPressed: isLoading ? null : onPressed,
-      child: _buildButtonContent(),
+      child: isLoading
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation(textColor),
+              ),
+            )
+          : Text(
+              text,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
     );
-  }
-
-  Widget _buildButtonContent() {
-    if (isLoading) {
-      return const SizedBox(
-        height: 20,
-        width: 20,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-        ),
-      );
-    }
-
-    if (icon != null) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 18),
-          SizedBox(width: 8),
-          Text(text),
-        ],
-      );
-    }
-
-    return Text(text);
   }
 }

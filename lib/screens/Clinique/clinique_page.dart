@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:medicall_app/config/routes.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '/config/theme.dart';
@@ -160,15 +161,13 @@ class _CliniquesListPageState extends State<CliniquesListPage> {
                               alignment: Alignment.centerRight,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  if (clinique.url != null) {
-                                    launchUrl(Uri.parse(clinique.url!));
-                                  }
+                                  NavigationHelper.navigateToHome(context);
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: primaryColor,
                                   foregroundColor: Colors.white,
                                 ),
-                                child: const Text('Visit Website'),
+                                child: const Text('Visit'),
                               ),
                             ),
                           ],

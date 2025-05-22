@@ -2,9 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '/NetworkManager/odoo_api_client.dart';
-import '/screens/Authentication/auth_provider.dart';
-import '/screens/Clinique/clinique_provider.dart';
+
+import 'package:medicall_app/NetworkManager/odoo_api_client.dart';
+import 'package:medicall_app/screens/Authentication/auth_provider.dart';
+import 'package:medicall_app/screens/Clinique/clinique_provider.dart';
+import 'package:medicall_app/screens/home/home_provider.dart';
+import 'package:medicall_app/screens/patient/patint_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,6 +29,14 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (context) => CliniqueProvider(context.read<OdooApiClient>()),
         ),
+        ChangeNotifierProvider(
+          create: (context) => HomeProvider(context.read<OdooApiClient>()),
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) => PatientProvider(
+            apiClient: ctx.read<OdooApiClient>(),
+          ),
+        ),
       ],
       child: MyApp(),
     ),
@@ -35,6 +46,8 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    print("PatientProvider dispo ? ${context.read<PatientProvider>()}");
+
     return MaterialApp(
       title: 'Clinique App',
       theme: appTheme,

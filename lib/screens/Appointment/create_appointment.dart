@@ -10,7 +10,6 @@ import '../../Models/Patient/create_patient_response.dart';
 import '../../NetworkManager/odoo_api_client.dart';
 
 class AddAppointmentScreen extends StatefulWidget {
-  static const routeName = '/create-appointment';
   const AddAppointmentScreen({Key? key}) : super(key: key);
 
   @override

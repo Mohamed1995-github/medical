@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:medicall_app/helper/shared_pref.dart';
 import '/Models/Authentication/register_response.dart';
 import '/Models/Authentication/send_sms_code_response.dart';
 import '/Models/base_response.dart';
@@ -30,7 +31,7 @@ class AuthProvider with ChangeNotifier {
       });
 
       if (response.success == true) {
-        await _saveUserData(response);
+        await SessionManager.saveUserData(response);
       } else {
         _errorMessage = response.message ?? 'Échec de la connexion';
       }
@@ -41,20 +42,6 @@ class AuthProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  Future<void> _saveUserData(LoginResponse response) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      'userData',
-      jsonEncode({
-        'userId': response.userId,
-        'partnerId': response.partnerId,
-        'name': response.name,
-        'email': response.email,
-        'phone': response.phone,
-      }),
-    );
   }
 
   void clearError() {
@@ -90,6 +77,7 @@ class AuthProvider with ChangeNotifier {
     required String email,
     required String password,
     required String code,
+    required String nni,
   }) async {
     try {
       RegisterResponse response = await _apiClient.registerUser({
@@ -108,6 +96,7 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = 'Erreur de connexion. Veuillez réessayer.';
     } finally {
       _isLoading = false;
+      SessionManager.saveGoveCode(nni);
       notifyListeners();
     }
   }
