@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:medicall_app/config/theme.dart';
 import 'package:medicall_app/screens/Medical/medical_provider.dart';
 
+import '../../config/routes.dart';
+
 class PhysicianScreen extends StatefulWidget {
   final int specialtyId;
   final String specialtyName;
@@ -55,7 +57,7 @@ class _PhysicianScreenState extends State<PhysicianScreen> {
                           subtitle: Text(
                               doc?.specialty ?? 'Spécialité non disponible'),
                           onTap: () {
-                            // TODO: naviguer vers l'écran de prise de RDV
+                            NavigationHelper.navigateToPayment(context);
                           },
                         ),
                       );

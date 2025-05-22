@@ -20,26 +20,31 @@ class PatientProvider extends ChangeNotifier {
 
   /// Crée un nouveau patient pour l'utilisateur connecté
   Future<void> createOrFetchPatient() async {
+    print('Création ou récupération du patient.............');
     _setLoading(true);
     try {
+      print('Création ou récupération du patient.............');
+
       // Récupération des infos utilisateur depuis les SharedPrefs
       final user = await SessionManager.getUserDetails();
       final createResp = await _apiClient.createPatient({
         'name': user.name,
-        'gender': user.gender ?? 'male',
-        'gov_code': user.nni,
+        'gender': 'male',
+        'gov_code': "123456789",
         'phone': user.phone,
       });
 
       if (createResp.success == true && createResp.patientId != null) {
         _patientId = createResp.patientId;
         // Sauvegarde en local
-        await SessionManager.savePatientId(_patientId!);
+        await SessionManager.setpatientkey(_patientId!);
+        await SessionManager.setExpirationFlag(true);
       } else {
         _error = createResp.message ?? 'Erreur lors de la création du patient.';
       }
     } catch (e) {
       _error = e.toString();
+      print('Erreur lors de la création du patient: $e');
     } finally {
       _setLoading(false);
     }
@@ -62,7 +67,8 @@ class PatientProvider extends ChangeNotifier {
 
       if (createResp.success == true && createResp.patientId != null) {
         _patientId = createResp.patientId;
-        await SessionManager.savePatientId(_patientId!);
+        await SessionManager.setpatientkey(_patientId!);
+        await SessionManager.setExpirationFlag(true);
       } else {
         _error = createResp.message ??
             'Erreur lors de la création du patient tiers.';

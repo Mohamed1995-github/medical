@@ -8,6 +8,7 @@ import 'package:medicall_app/screens/Authentication/auth_provider.dart';
 import 'package:medicall_app/screens/Clinique/clinique_provider.dart';
 import 'package:medicall_app/screens/home/home_provider.dart';
 import 'package:medicall_app/screens/patient/patint_provider.dart';
+import 'package:medicall_app/screens/Medical/medical_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,6 +35,11 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider(
           create: (ctx) => PatientProvider(
+            apiClient: ctx.read<OdooApiClient>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) => MedicalProvider(
             apiClient: ctx.read<OdooApiClient>(),
           ),
         ),

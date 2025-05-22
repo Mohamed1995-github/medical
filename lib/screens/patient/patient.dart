@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:medicall_app/config/routes.dart';
 import 'package:medicall_app/config/theme.dart';
 import 'package:medicall_app/helper/shared_pref.dart';
 import 'package:medicall_app/widgets/custom_button.dart';
@@ -38,11 +39,12 @@ class PatientChoicePage extends StatelessWidget {
                     if (hasPatient == true) {
                       print(
                           'Patient existant, redirection vers la page d\'accueil');
-                      Navigator.pushNamed(context, '/home');
+                      NavigationHelper.navigateToSpeciality(context);
                     } else {
                       print(
                           'Pas de patient existant, création d\'un nouveau patient');
                       context.read<PatientProvider>().createOrFetchPatient();
+                      NavigationHelper.navigateToSpeciality(context);
                     }
                   }).catchError((error) {
                     // Gestion d'erreur

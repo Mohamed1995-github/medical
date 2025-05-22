@@ -225,7 +225,7 @@ class _OdooApiClient implements OdooApiClient {
     )
             .compose(
               _dio.options,
-              '/si7a/_specialties',
+              '/si7a/get_specialties',
               queryParameters: queryParameters,
               data: _data,
             )
@@ -249,7 +249,7 @@ class _OdooApiClient implements OdooApiClient {
     )
             .compose(
               _dio.options,
-              '/si7a/_physicians_by_specialty',
+              '/si7a/get_physicians_by_specialty',
               queryParameters: queryParameters,
               data: _data,
             )

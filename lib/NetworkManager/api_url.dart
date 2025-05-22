@@ -19,7 +19,7 @@ class ApiUrl {
   static const String createAppointmentUrl = "/si7a/create_appointment";
 
   // Medical data endpoints
-  static const String specialtiesUrl = "/si7a/_specialties";
+  static const String specialtiesUrl = "/si7a/get_specialties";
   static const String physiciansBySpecialtyUrl =
-      "/si7a/_physicians_by_specialty";
+      "/si7a/get_physicians_by_specialty";
 }
