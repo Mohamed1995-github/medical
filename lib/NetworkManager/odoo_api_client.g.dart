@@ -11,17 +11,31 @@ part of 'odoo_api_client.dart';
 class _OdooApiClient implements OdooApiClient {
   _OdooApiClient(
     this._dio, {
-    this.baseUrl,
-  }) {
-    baseUrl ??= 'https://abc-hms-pro.odoo.com/odoo/api';
+    String? baseUrl,
+  }) : baseUrl = baseUrl ?? 'https://hms-pro.odoo.com/odoo/api' {
+    // Initialize with default first
+    _initializeBaseUrl(); // Start async initialization
   }
 
   final Dio _dio;
+  @override
+  String baseUrl;
 
-  String? baseUrl;
+  // Asynchronously initialize baseUrl
+  Future<void> _initializeBaseUrl() async {
+    final savedUrl = await SessionManager.getBaseUrl();
+    if (savedUrl != null && savedUrl.isNotEmpty) {
+      baseUrl = savedUrl;
+      print('Base URL loaded from storage: $baseUrl');
+    } else {
+      baseUrl = 'https://hms-pro.odoo.com/odoo/api';
+      print('Base URL set to default: $baseUrl');
+    }
+  }
 
   @override
   Future<SendSmsCodeResponse> sendVerificationCode(body) async {
+    await _initializeBaseUrl();
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -46,6 +60,7 @@ class _OdooApiClient implements OdooApiClient {
 
   @override
   Future<RegisterResponse> registerUser(body) async {
+    await _initializeBaseUrl();
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -70,6 +85,7 @@ class _OdooApiClient implements OdooApiClient {
 
   @override
   Future<LoginResponse> loginUser(body) async {
+    await _initializeBaseUrl();
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -94,6 +110,7 @@ class _OdooApiClient implements OdooApiClient {
 
   @override
   Future<BaseModel> resetPassword(body) async {
+    await _initializeBaseUrl();
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -118,6 +135,7 @@ class _OdooApiClient implements OdooApiClient {
 
   @override
   Future<CliniquesResponse> getCliniques() async {
+    await _initializeBaseUrl();
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -141,6 +159,7 @@ class _OdooApiClient implements OdooApiClient {
 
   @override
   Future<CreatePatientResponse> createPatient(body) async {
+    await _initializeBaseUrl();
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -165,6 +184,7 @@ class _OdooApiClient implements OdooApiClient {
 
   @override
   Future<CheckPatientResponse> checkPatientExists(body) async {
+    await _initializeBaseUrl();
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -189,6 +209,7 @@ class _OdooApiClient implements OdooApiClient {
 
   @override
   Future<CreateAppointmentResponse> createAppointment(body) async {
+    await _initializeBaseUrl();
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -212,7 +233,33 @@ class _OdooApiClient implements OdooApiClient {
   }
 
   @override
+  Future<AppointmentHistoryItem> getAppointmentHistory() async {
+    await _initializeBaseUrl();
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll({});
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<CreateAppointmentResponse>(Options(
+      method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+            .compose(
+              _dio.options,
+              '/si7a/get_appointments_by_patient',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final value = AppointmentHistoryItem.fromJson(_result.data!);
+    return value;
+  }
+
+  @override
   Future<SpecialtiesResponse> getSpecialties() async {
+    await _initializeBaseUrl();
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -236,6 +283,7 @@ class _OdooApiClient implements OdooApiClient {
 
   @override
   Future<PhysiciansResponse> getPhysiciansBySpecialty(body) async {
+    await _initializeBaseUrl();
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -250,6 +298,30 @@ class _OdooApiClient implements OdooApiClient {
             .compose(
               _dio.options,
               '/si7a/get_physicians_by_specialty',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final value = PhysiciansResponse.fromJson(_result.data!);
+    return value;
+  }
+
+  @override
+  Future<PhysiciansResponse> getPhysicianDetails() async {
+    await _initializeBaseUrl();
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<PhysiciansResponse>(Options(
+      method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+            .compose(
+              _dio.options,
+              '/si7a/get_all_physicians',
               queryParameters: queryParameters,
               data: _data,
             )

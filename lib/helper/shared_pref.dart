@@ -11,7 +11,31 @@ class SessionManager {
   static const _userDataKey = 'userData';
   static const _expirationKey = 'expiration';
   static const _patientIdKey = 'patientId';
+  static const _baseUrlKey = 'odoo_base_url';
+  static const String _keyIsLoggedIn = 'is_logged_in';
 
+  /// Save login state
+  static Future<void> setIsLoggedIn(bool isLoggedIn) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyIsLoggedIn, isLoggedIn);
+  }
+
+  /// Get login state
+  static Future<bool> getIsLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyIsLoggedIn) ?? false;
+  }
+  // Save URL to SharedPreferences
+  static Future<void> saveBaseUrl(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_baseUrlKey, url);
+  }
+
+  // Get URL from SharedPreferences (returns null if not set)
+  static Future<String?> getBaseUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_baseUrlKey) ?? '';
+  }
   /// Enregistre le code gouvernemental.
   static Future<void> saveGoveCode(String code) async {
     final prefs = await SharedPreferences.getInstance();

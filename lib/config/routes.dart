@@ -14,7 +14,7 @@ import '../screens/home/home_page.dart';
 // import '../screens/clinique/create_appointment.dart';
 import '../screens/patient/patient.dart';
 import '../screens/Medical/speciality.dart';
-
+import '../screens/Medical/all_physisian.dart';
 // import '../screens/payment_page.dart';
 
 final Map<String, WidgetBuilder> appRoutes = {
@@ -36,6 +36,7 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/home': (c) => HomePage(),
   '/speciality': (c) => SpecialtyScreen(),
   '/payment': (c) => PaymentWalletSelectionPage(),
+  '/physicians': (c) => AllPhysiciansScreen(),
   // '/profile': (c) => ProfilePage(),
   // '/history': (c) => HistoryPage(),
 
@@ -69,32 +70,6 @@ class NavigationHelper {
       Navigator.pushNamed(c, '/speciality');
   static void navigateToPayment(BuildContext c) =>
       Navigator.pushNamed(c, '/payment');
-  // static void navigateToClinics(BuildContext c) =>
-  //     Navigator.pushNamed(c, '/clinics');
-  // static void navigateToHistory(BuildContext c) =>
-  //     Navigator.pushNamed(c, '/history');
-
-  // static void navigateToCreateAppointment(
-  //   BuildContext c, {
-  //   required Clinic clinic,
-  //   required String govCode,
-  // }) =>
-  //     Navigator.pushNamed(
-  //       c,
-  //       '/create-appointment',
-  //       arguments: {
-  //         'clinic': clinic,
-  //         'govCode': govCode,
-  //       },
-  //     );
-
-  // static void navigateToPayment(BuildContext c, {required int appointmentId}) =>
-  //     Navigator.pushNamed(
-  //       c,
-  //       '/payment',
-  //       arguments: {'appointmentId': appointmentId},
-  //     );
-
-  // static void navigateToProfile(BuildContext c) =>
-  //     Navigator.pushNamed(c, '/profile');
+  static void navigateToPhysicians(BuildContext c) =>
+      Navigator.pushNamed(c, '/physicians');
 }

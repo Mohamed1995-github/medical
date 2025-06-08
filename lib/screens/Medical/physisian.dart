@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:medicall_app/Models/Medical/physician_model.dart';
 import 'package:provider/provider.dart';
 import 'package:medicall_app/config/theme.dart';
-import 'package:medicall_app/screens/Medical/medical_provider.dart';
+import 'package:medicall_app/screens/Medical/provider/medical_provider.dart';
 
 import '../../config/routes.dart';
 

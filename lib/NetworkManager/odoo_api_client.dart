@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:dio/dio.dart';
+import 'package:medicall_app/Models/Clinique/clinique_model.dart';
+import 'package:medicall_app/Models/Medical/physician_model.dart';
+import 'package:medicall_app/Models/Medical/specialty_model.dart';
+import 'package:medicall_app/helper/shared_pref.dart';
 import '../Models/Appointment/create_appointment_response.dart';
 import '../Models/Authentication/login_response.dart';
 import '../Models/Authentication/register_response.dart';
 import '../Models/Authentication/send_sms_code_response.dart';
-import '../Models/Clinique/cliniques_response.dart';
-import '../Models/Medical/physicians_response.dart';
-import '../Models/Medical/specialties_response.dart';
 import '../Models/Patient/check_patient_response.dart';
 import '../Models/Patient/create_patient_response.dart';
 import '../Models/base_response.dart';
@@ -18,9 +19,9 @@ part 'odoo_api_client.g.dart';
 
 @RestApi(baseUrl: ApiUrl.baseUrl)
 abstract class OdooApiClient {
-  factory OdooApiClient(Dio dio, {String baseUrl}) = _OdooApiClient;
+  factory OdooApiClient(Dio dio) = _OdooApiClient;
 
-  static OdooApiClient create() {
+  static Future<OdooApiClient> create() async {
     final dio = Dio(BaseOptions(
       receiveTimeout: const Duration(seconds: 15),
       connectTimeout: const Duration(seconds: 15),
@@ -36,8 +37,11 @@ abstract class OdooApiClient {
       responseBody: true,
     ));
 
-    return OdooApiClient(dio);
+    final client = OdooApiClient(dio);
+    await (client as _OdooApiClient)._initializeBaseUrl();
+    return client;
   }
+
 
   // Authentication Endpoints
   @POST(ApiUrl.sendCodeUrl)
@@ -80,6 +84,8 @@ abstract class OdooApiClient {
   Future<CreateAppointmentResponse> createAppointment(
     @Body() Map<String, dynamic> body,
   );
+ @GET(ApiUrl.appointmentHistoryUrl)
+  Future<AppointmentHistoryItem> getAppointmentHistory();
 
   // Medical Data Endpoints
   @POST(ApiUrl.specialtiesUrl)
@@ -89,4 +95,7 @@ abstract class OdooApiClient {
   Future<PhysiciansResponse> getPhysiciansBySpecialty(
     @Body() Map<String, dynamic> body,
   );
+
+  @GET(ApiUrl.physicianDetailsUrl)
+  Future<PhysiciansResponse> getPhysicianDetails();
 }

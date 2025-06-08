@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/Models/Clinique/cliniques_response.dart';
+import 'package:medicall_app/Models/Clinique/clinique_model.dart';
 import '/NetworkManager/odoo_api_client.dart';
 
 class CliniqueProvider with ChangeNotifier {

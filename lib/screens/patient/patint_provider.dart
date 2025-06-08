@@ -61,7 +61,7 @@ class PatientProvider extends ChangeNotifier {
       final createResp = await _apiClient.createPatient({
         'name': name,
         'gender': gender,
-        'nni': nni,
+        // 'nni': nni,
         'phone': phone,
       });
 

@@ -1,6 +1,6 @@
 class ApiUrl {
   static const String baseUrl =
-      "https://abc-hms-pro.odoo.com/odoo/api"; // Set this in app initialization
+      "https://hms-pro.odoo.com/odoo/api"; // Set this in app initialization
 
   // Authentication endpoints
   static const String sendCodeUrl = "/si7a/send_code";
@@ -17,9 +17,13 @@ class ApiUrl {
 
   // Appointment endpoints
   static const String createAppointmentUrl = "/si7a/create_appointment";
-
+  // Appointment history endpoint
+  static const String appointmentHistoryUrl = "/si7a/get_appointments_by_patient";
   // Medical data endpoints
   static const String specialtiesUrl = "/si7a/get_specialties";
   static const String physiciansBySpecialtyUrl =
       "/si7a/get_physicians_by_specialty";
+  static const String physicianDetailsUrl = "/si7a/get_all_physicians";
+
+
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:medicall_app/config/routes.dart';
+import 'package:medicall_app/helper/shared_pref.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '/config/theme.dart';
-import '/screens/Clinique/clinique_provider.dart';
+import '../../config/routes.dart';
+import '../../config/theme.dart';
+import 'provider/clinique_provider.dart';
 
 class CliniquesListPage extends StatefulWidget {
   const CliniquesListPage({super.key});
@@ -13,174 +13,239 @@ class CliniquesListPage extends StatefulWidget {
 }
 
 class _CliniquesListPageState extends State<CliniquesListPage> {
-  Future<void> _refreshData(BuildContext context) async {
-    await Provider.of<CliniqueProvider>(context, listen: false).Clinique();
-  }
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     Future.microtask(
-      () => Provider.of<CliniqueProvider>(context, listen: false).Clinique(),
-    );
+        () => Provider.of<CliniqueProvider>(context, listen: false).Clinique());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refreshData() async {
+    await Provider.of<CliniqueProvider>(context, listen: false).Clinique();
+  }
+
+  List<dynamic> _filterCliniques(List<dynamic> cliniques) {
+    if (_searchQuery.isEmpty) return cliniques;
+    return cliniques
+        .where((c) =>
+            (c.name ?? '').toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text("Cliniques"),
+        title: const Text('Cliniques',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: primaryColor,
+        elevation: 4,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => _refreshData(context),
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshData),
         ],
       ),
-      body: Consumer<CliniqueProvider>(
-        builder: (context, provider, _) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          Expanded(
+            child: Consumer<CliniqueProvider>(
+              builder: (context, provider, _) {
+                if (provider.isLoading) {
+                  return const Center(
+                      child: CircularProgressIndicator(color: primaryColor));
+                }
+                if (provider.errorMessage != null) {
+                  return _buildError(provider.errorMessage!);
+                }
 
-          if (provider.errorMessage != null) {
-            return Center(child: Text(provider.errorMessage!));
-          }
+                final allCliniques =
+                    provider.cliniquesResponse?.cliniques ?? [];
+                final filtered = _filterCliniques(allCliniques);
 
-          final cliniques = provider.cliniquesResponse?.cliniques ?? [];
+                if (allCliniques.isEmpty)
+                  return _buildEmpty('Aucune clinique disponible');
+                if (filtered.isEmpty)
+                  return _buildEmpty(
+                      'Aucune clinique trouvée pour "$_searchQuery"');
 
-          return RefreshIndicator(
-            onRefresh: () => _refreshData(context),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: cliniques.length,
-              itemBuilder: (context, index) {
-                final clinique = cliniques[index];
-                return Container(
-                  margin: const EdgeInsets.symmetric(vertical: 10),
-                  height: 200,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      // Background Image
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          clinique.image ?? '',
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.broken_image, size: 50),
-                          ),
-                        ),
-                      ),
-
-                      // Gradient Overlay
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                            colors: [
-                              Colors.black.withOpacity(0.7),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Content
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              clinique.name ?? '',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            GestureDetector(
-                              onTap: () async {
-                                if (clinique.location != null) {
-                                  final Uri url = Uri.parse(clinique.location!);
-                                  if (await canLaunchUrl(url)) {
-                                    await launchUrl(url);
-                                  }
-                                }
-                              },
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.location_on,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Location: ${clinique.location ?? ''}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              clinique.description ?? '',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 12),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  NavigationHelper.navigateToHome(context);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  foregroundColor: Colors.white,
-                                ),
-                                child: const Text('Visit'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                return RefreshIndicator(
+                  onRefresh: _refreshData,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filtered.length,
+                    itemBuilder: (_, i) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: ClinicCard(
+                          clinique: filtered[i],
+                          onTap: () {
+                            print('Selected clinic: ${filtered[i].name}');
+                            print('Clinic URL: ${filtered[i].url}');
+                            SessionManager.saveBaseUrl(filtered[i].url!);
+                            NavigationHelper.navigateToHome(context);
+                          }),
+                    ),
                   ),
                 );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (val) => setState(() => _searchQuery = val),
+        decoration: InputDecoration(
+          hintText: 'Rechercher une clinique...',
+          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.grey),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: Colors.grey[200],
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide.none),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildError(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: Colors.redAccent),
+          const SizedBox(height: 16),
+          Text(message,
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: _refreshData,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Réessayer'),
+            style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmpty(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.local_hospital_outlined,
+              size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          Text(message,
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+}
+
+class ClinicCard extends StatelessWidget {
+  final dynamic clinique;
+  final VoidCallback onTap;
+
+  const ClinicCard({required this.clinique, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+              colors: [primaryColor.withOpacity(0.1), Colors.white]),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+          ],
+        ),
+        child: Row(
+          children: [
+            _buildImage(),
+            Expanded(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                child: Text(
+                  clinique.name ?? 'Clinique',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Icon(Icons.arrow_forward_ios,
+                  size: 16, color: Colors.grey[400]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImage() {
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+        color: Colors.grey[300],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+        child: clinique.image != null && clinique.image!.isNotEmpty
+            ? Image.network(
+                clinique.image!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _placeholder(),
+                loadingBuilder: (_, child, progress) => progress == null
+                    ? child
+                    : const Center(child: CircularProgressIndicator()),
+              )
+            : _placeholder(),
+      ),
+    );
+  }
+
+  Widget _placeholder() {
+    return const Icon(Icons.local_hospital, size: 40, color: Colors.white);
   }
 }
